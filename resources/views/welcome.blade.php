@@ -127,11 +127,11 @@
                     <a href="{{ route('login') }}" class="px-5 py-2.5 text-sm font-semibold text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-xl transition-all">
                         Masuk
                     </a>
-                    @if (Route::has('register'))
+                    {{-- @if (Route::has('register'))
                     <a href="{{ route('register') }}" class="btn-primary px-5 py-2.5 text-sm font-semibold text-white rounded-xl">
                         Daftar
                     </a>
-                    @endif
+                    @endif --}}
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -158,9 +158,9 @@
                     <a href="#kontak" class="block py-3 px-4 rounded-xl hover:bg-sky-50 text-slate-700 font-medium">Kontak</a>
                     <hr class="my-4 border-slate-200">
                     <a href="{{ route('login') }}" class="block py-3 px-4 rounded-xl bg-sky-50 text-sky-600 font-semibold text-center">Masuk</a>
-                    @if (Route::has('register'))
+                    {{-- @if (Route::has('register'))
                     <a href="{{ route('register') }}" class="block py-3 px-4 rounded-xl bg-sky-500 text-white font-semibold text-center">Daftar</a>
-                    @endif
+                    @endif --}}
                 </div>
             </div>
         </div>
@@ -213,15 +213,15 @@
                     <!-- Stats -->
                     <div class="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-sky-100">
                         <div class="text-center lg:text-left">
-                            <p class="text-3xl lg:text-4xl font-bold text-slate-800">500+</p>
+                            <p class="text-3xl lg:text-4xl font-bold text-slate-800"></p>
                             <p class="text-sm text-slate-500 mt-1">Inventaris</p>
                         </div>
                         <div class="text-center lg:text-left">
-                            <p class="text-3xl lg:text-4xl font-bold text-slate-800">50+</p>
+                            <p class="text-3xl lg:text-4xl font-bold text-slate-800"></p>
                             <p class="text-sm text-slate-500 mt-1">Ruangan</p>
                         </div>
                         <div class="text-center lg:text-left">
-                            <p class="text-3xl lg:text-4xl font-bold text-slate-800">100%</p>
+                            <p class="text-3xl lg:text-4xl font-bold text-slate-800"></p>
                             <p class="text-sm text-slate-500 mt-1">Digital</p>
                         </div>
                     </div>
@@ -355,7 +355,7 @@
                     </p>
                 </div>
 
-                <!-- Feature 5 -->
+                {{-- <!-- Feature 5 -->
                 <div class="card-hover bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 reveal">
                     <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/30">
                         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -363,24 +363,24 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-3">Manajemen Ruangan</h3>
+                    {{-- <h3 class="text-xl font-bold text-slate-800 mb-3">Manajemen Ruangan</h3>
                     <p class="text-slate-600 leading-relaxed">
                         Kelola lokasi dan ruangan untuk pengelolaan aset yang lebih terstruktur.
-                    </p>
-                </div>
+                    </p> --}}
+                </div> 
 
                 <!-- Feature 6 -->
-                <div class="card-hover bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 reveal">
+                {{-- <div class="card-hover bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 reveal">
                     <div class="w-14 h-14 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-cyan-500/30">
                         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-3">Notifikasi Otomatis</h3>
+                    {{-- <h3 class="text-xl font-bold text-slate-800 mb-3">Notifikasi Otomatis</h3>
                     <p class="text-slate-600 leading-relaxed">
                         Pemberitahuan otomatis untuk jadwal maintenance dan pengembalian barang.
-                    </p>
-                </div>
+                    </p> --}}
+                </div> 
             </div>
         </div>
     </section>
@@ -407,12 +407,12 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="bg-sky-50 rounded-xl p-4 text-center">
-                                        <p class="text-2xl font-bold text-sky-600">500+</p>
-                                        <p class="text-xs text-slate-600 mt-1">Item Inventaris</p>
+                                        <p class="text-2xl font-bold text-sky-600"></p>
+                                        <p class="text-xs text-slate-600 mt-1">Item Inventaris Terkelola Dengan Rapi</p>
                                     </div>
                                     <div class="bg-emerald-50 rounded-xl p-4 text-center">
-                                        <p class="text-2xl font-bold text-emerald-600">98%</p>
-                                        <p class="text-xs text-slate-600 mt-1">Kondisi Baik</p>
+                                        <p class="text-2xl font-bold text-emerald-600">Menjaga Barang</p>
+                                        <p class="text-xs text-slate-600 mt-1">Agar Kondisi Barang Tetap Baik</p>
                                     </div>
                                 </div>
                             </div>
@@ -484,11 +484,11 @@
                 Daftar sekarang dan rasakan kemudahan mengelola sarana prasarana sekolah dengan sistem digital modern.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                @if (Route::has('register'))
+                {{-- @if (Route::has('register'))
                 <a href="{{ route('register') }}" class="px-10 py-4 rounded-2xl font-semibold text-sky-600 text-lg bg-white hover:bg-sky-50 transition-all shadow-xl">
                     Daftar Gratis
                 </a>
-                @endif
+                @endif --}}
                 <a href="{{ route('login') }}" class="px-10 py-4 rounded-2xl font-semibold text-white text-lg border-2 border-white/50 hover:bg-white/10 transition-all">
                     Sudah Punya Akun
                 </a>

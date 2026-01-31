@@ -63,7 +63,7 @@ class ItemController extends Controller
 
     return redirect()
         ->route('items.index')
-        ->with('success', 'Item created + QR generated');
+        ->with('success', 'Item created');
 }
     public function show(Item $item)
     {

@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Controller;
+namespace App\Http\Controllers;
+
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,12 +16,28 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
+        // 1️⃣ ambil user berdasarkan email
+        $user = User::where('email', $request->email)->first();
+
+        // 2️⃣ kalau user tidak ada
+        if (!$user) {
+            return back()->withErrors([
+                'email' => 'Email atau password salah.',
+            ]);
+        }
+
+        // 3️⃣ kalau akun NONAKTIF → STOP
+        if ((int) $user->status === 0) {
+            return back()->with('inactive', true);
+        }
+
+        // 4️⃣ cek password
+        if (Auth::attempt($request->only('email', 'password'))) {
             $request->session()->regenerate();
             return redirect()->intended('/dashboard');
         }
@@ -50,7 +67,7 @@ class AuthController extends Controller
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'role' => 'admin',
-            'status' => 'active',
+            'status' => 1, // ✅ AKTIF (ANGKA)
         ]);
 
         return redirect('/login')->with('success', 'Registrasi berhasil, silakan login.');

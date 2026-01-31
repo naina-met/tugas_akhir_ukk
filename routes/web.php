@@ -1,82 +1,99 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\StockInController;
-use App\Http\Controllers\StockOutController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\{
+    ProfileController,
+    CategoryController,
+    ItemController,
+    StockInController,
+    StockOutController,
+    UserController,
+    DashboardController,
+    DamageReportController,
+    ExportController
+};
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-// DASHBOARD (REVISI: verified DIHAPUS)
+// ================= DASHBOARD =================
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth'])
+    ->middleware('auth')
     ->name('dashboard');
 
+// ================= AUTH AREA =================
 Route::middleware('auth')->group(function () {
 
+    // ===== PROFILE =====
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ===== MASTER DATA =====
     Route::resource('categories', CategoryController::class);
     Route::resource('items', ItemController::class);
 
-    Route::get('/export-items', [App\Http\Controllers\ExportController::class, 'exportItems'])
-        ->name('export.items');
-
+    // ===== STOCK IN =====
     Route::resource('stock-ins', StockInController::class);
-
-    Route::get('/export-stock-ins', [App\Http\Controllers\ExportController::class, 'exportStockIns'])
+    Route::get('/export-stock-ins', [ExportController::class, 'exportStockIns'])
         ->name('export.stockins');
 
+    // ===== STOCK OUT =====
     Route::resource('stock-outs', StockOutController::class);
-
-    Route::get('/export-stock-outs', [App\Http\Controllers\ExportController::class, 'exportStockOuts'])
+    Route::get('/export-stock-outs', [ExportController::class, 'exportStockOuts'])
         ->name('export.stockouts');
 
-    Route::get('/export-damage-reports', [App\Http\Controllers\ExportController::class, 'exportDamageReports'])
-        ->name('export.damagereports');
-        
-    // === DAMAGE REPORTS ROUTES ===
-    Route::get('/lapor-kerusakan', [\App\Http\Controllers\DamageReportController::class, 'create'])
+    // ===== EXPORT ITEMS =====
+    Route::get('/export-items', [ExportController::class, 'exportItems'])
+        ->name('export.items');
+
+    // ===== DAMAGE REPORTS (USER) =====
+    Route::get('/lapor-kerusakan', [DamageReportController::class, 'create'])
         ->name('damage-reports.create');
 
-    Route::post('/lapor-kerusakan', [\App\Http\Controllers\DamageReportController::class, 'store'])
+    Route::post('/lapor-kerusakan', [DamageReportController::class, 'store'])
         ->name('damage-reports.store');
 
-    Route::get('/admin/laporan-kerusakan', [\App\Http\Controllers\DamageReportController::class, 'index'])
+    // ===== DAMAGE REPORTS (ADMIN) =====
+    Route::get('/admin/laporan-kerusakan', [DamageReportController::class, 'index'])
         ->name('damage-reports.admin');
 
-    Route::post('/admin/laporan-kerusakan/store', [\App\Http\Controllers\DamageReportController::class, 'storeFromAdmin'])
+    Route::post('/admin/laporan-kerusakan/store', [DamageReportController::class, 'storeFromAdmin'])
         ->name('damage-reports.admin.store');
 
-    Route::put('/admin/laporan-kerusakan/{id}', [\App\Http\Controllers\DamageReportController::class, 'update'])
+    Route::put('/admin/laporan-kerusakan/{id}', [DamageReportController::class, 'update'])
         ->name('damage-reports.update');
 
-    Route::delete('/admin/laporan-kerusakan/{id}', [\App\Http\Controllers\DamageReportController::class, 'destroy'])
+    Route::delete('/admin/laporan-kerusakan/{id}', [DamageReportController::class, 'destroy'])
         ->name('damage-reports.destroy');
 
-    Route::post('/admin/laporan-kerusakan/{id}/process', [\App\Http\Controllers\DamageReportController::class, 'process'])
+    Route::post('/admin/laporan-kerusakan/{id}/process', [DamageReportController::class, 'process'])
         ->name('damage-reports.process');
 
-    Route::post('/admin/laporan-kerusakan/{id}/done', [\App\Http\Controllers\DamageReportController::class, 'done'])
+    Route::post('/admin/laporan-kerusakan/{id}/done', [DamageReportController::class, 'done'])
         ->name('damage-reports.done');
+
+    Route::get('/export-damage-reports', [ExportController::class, 'exportDamageReports'])
+        ->name('export.damagereports');
 });
 
-
-
-Route::get('/argon', function () {
-    return view('layouts.argon');
-})->middleware(['auth']);
-
+// ================= ADMIN USERS =================
 Route::middleware(['auth', 'can:manage-users'])->group(function () {
     Route::resource('users', UserController::class);
 });
 
-require __DIR__.'/auth.php';
+// ================= ARGON TEST =================
+Route::get('/argon', function () {
+    return view('layouts.argon');
+})->middleware('auth');
+
+// ================= AUTH ROUTES (LOGIN, LOGOUT, REGISTER) =================
+require __DIR__ . '/auth.php';
+
+// ===== LAPORAN BARANG MASUK & KELUAR =====
+use App\Http\Controllers\ReportController;
+
+Route::get('/reports', [ReportController::class, 'index'])
+    ->name('reports.index')
+    ->middleware('auth');
