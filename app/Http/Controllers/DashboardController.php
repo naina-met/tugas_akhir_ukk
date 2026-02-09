@@ -26,83 +26,128 @@ class DashboardController extends Controller
 
     private function getDashboardData()
     {
-        // Stats
+        /* =========================
+         * STATISTIK UTAMA
+         * ========================= */
         $totalItems = Item::count();
         $totalCategories = Category::count();
-        $lowStock = Item::where('stock', '<=', 10)->where('stock', '>', 0)->count();
+        $lowStock = Item::where('stock', '<=', 10)
+                        ->where('stock', '>', 0)
+                        ->count();
         $outOfStock = Item::where('stock', '<=', 0)->count();
 
-        // Tampilkan 7 hari terakhir (dari 6 hari yang lalu hingga hari ini)
-        $days = [];
-        $stockInData = [];
-        $stockOutData = [];
+        /* =========================
+         * GRAFIK 7 HARI TERAKHIR
+         * TERMASUK HARI INI
+         * ========================= */
+        $startDate = Carbon::today()->subDays(6); // 6 hari lalu
+        $endDate   = Carbon::today();             // hari ini
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $dateFormatted = $date->format('d M');
-            $days[] = $dateFormatted;
-
-            // Query berdasarkan field 'date' yang diinput user
-            $stockInSum = StockIn::whereDate('date', $date->format('Y-m-d'))->sum('quantity');
-            $stockOutSum = StockOut::whereDate('date', $date->format('Y-m-d'))->sum('quantity');
-            
-            $stockInData[] = (int)$stockInSum;
-            $stockOutData[] = (int)$stockOutSum;
+        $chartLabels = [];
+        for ($i = 0; $i < 7; $i++) {
+            $chartLabels[] = $startDate->copy()
+                ->addDays($i)
+                ->format('d M');
         }
 
-        // Stock Distribution by Category
+        // --- Stock In (group by tanggal)
+        $stockInRaw = StockIn::whereBetween('date', [
+                $startDate->copy()->startOfDay(),
+                $endDate->copy()->endOfDay()
+            ])
+            ->selectRaw('DATE(date) as tanggal, SUM(quantity) as total')
+            ->groupBy('tanggal')
+            ->pluck('total', 'tanggal');
+
+        $stockInData = [];
+        for ($i = 0; $i < 7; $i++) {
+            $tgl = $startDate->copy()->addDays($i)->toDateString();
+            $stockInData[] = (int) ($stockInRaw[$tgl] ?? 0);
+        }
+
+        // --- Stock Out (group by tanggal)
+        $stockOutRaw = StockOut::whereBetween('date', [
+                $startDate->copy()->startOfDay(),
+                $endDate->copy()->endOfDay()
+            ])
+            ->selectRaw('DATE(date) as tanggal, SUM(quantity) as total')
+            ->groupBy('tanggal')
+            ->pluck('total', 'tanggal');
+
+        $stockOutData = [];
+        for ($i = 0; $i < 7; $i++) {
+            $tgl = $startDate->copy()->addDays($i)->toDateString();
+            $stockOutData[] = (int) ($stockOutRaw[$tgl] ?? 0);
+        }
+
+        /* =========================
+         * DISTRIBUSI STOK PER KATEGORI
+         * ========================= */
         $categories = Category::withCount('items')->get();
         $categoryLabels = $categories->pluck('name')->toArray();
         $categoryData = [];
-        
+
         foreach ($categories as $category) {
             $categoryData[] = Item::where('category_id', $category->id)->sum('stock');
         }
 
-        // Recent Stock In - gunakan field 'date' untuk sorting dan display
+        /* =========================
+         * BARANG MASUK TERBARU
+         * ========================= */
         $recentStockIn = StockIn::with('item')
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get()
             ->map(function ($stockIn) {
-                $date = $stockIn->date ? Carbon::parse($stockIn->date) : $stockIn->created_at;
+                $date = $stockIn->date
+                    ? Carbon::parse($stockIn->date)
+                    : $stockIn->created_at;
+
                 return [
                     'item_name' => $stockIn->item->name ?? 'Unknown',
-                    'quantity' => $stockIn->quantity,
-                    'date' => $date->format('d M Y'),
-                    'time' => $stockIn->created_at->format('H:i'),
+                    'quantity'  => $stockIn->quantity,
+                    'date'      => $date->format('Y-m-d'),
+                    'time'      => $stockIn->created_at->format('H:i'),
                 ];
             });
 
-        // Recent Stock Out - gunakan field 'date' untuk sorting dan display
+        /* =========================
+         * BARANG KELUAR TERBARU
+         * ========================= */
         $recentStockOut = StockOut::with('item')
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get()
             ->map(function ($stockOut) {
-                $date = $stockOut->date ? Carbon::parse($stockOut->date) : $stockOut->created_at;
+                $date = $stockOut->date
+                    ? Carbon::parse($stockOut->date)
+                    : $stockOut->created_at;
+
                 return [
                     'item_name' => $stockOut->item->name ?? 'Unknown',
-                    'quantity' => $stockOut->quantity,
-                    'date' => $date->format('d M Y'),
-                    'time' => $stockOut->created_at->format('H:i'),
+                    'quantity'  => $stockOut->quantity,
+                    'date'      => $date->format('Y-m-d'),
+                    'time'      => $stockOut->created_at->format('H:i'),
                 ];
             });
 
+        /* =========================
+         * RETURN DATA KE VIEW / AJAX
+         * ========================= */
         return [
-            'totalItems' => $totalItems,
+            'totalItems'      => $totalItems,
             'totalCategories' => $totalCategories,
-            'lowStock' => $lowStock,
-            'outOfStock' => $outOfStock,
-            'chartLabels' => $days,
-            'stockInData' => $stockInData,
-            'stockOutData' => $stockOutData,
-            'categoryLabels' => $categoryLabels,
-            'categoryData' => $categoryData,
-            'recentStockIn' => $recentStockIn,
-            'recentStockOut' => $recentStockOut,
+            'lowStock'        => $lowStock,
+            'outOfStock'      => $outOfStock,
+            'chartLabels'     => $chartLabels,
+            'stockInData'     => $stockInData,
+            'stockOutData'    => $stockOutData,
+            'categoryLabels'  => $categoryLabels,
+            'categoryData'    => $categoryData,
+            'recentStockIn'   => $recentStockIn,
+            'recentStockOut'  => $recentStockOut,
         ];
     }
 }

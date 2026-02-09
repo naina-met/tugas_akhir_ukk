@@ -1,10 +1,53 @@
 <x-app-layout>
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-fade-in-up { opacity: 0; animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-fade-in-left { opacity: 0; animation: fadeInLeft 0.5s ease-out forwards; }
+        .animate-fade-in-right { opacity: 0; animation: fadeInRight 0.5s ease-out forwards; }
+        .animate-scale-in { opacity: 0; animation: scaleIn 0.5s ease-out forwards; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .stat-card { opacity: 0; animation: fadeInUp 0.5s ease-out forwards; }
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .chart-card { opacity: 0; animation: scaleIn 0.6s ease-out forwards; }
+        .chart-card:nth-child(1) { animation-delay: 0.4s; }
+        .chart-card:nth-child(2) { animation-delay: 0.5s; }
+        .activity-card { opacity: 0; animation: fadeInUp 0.5s ease-out forwards; }
+        .activity-card:nth-child(1) { animation-delay: 0.6s; }
+        .activity-card:nth-child(2) { animation-delay: 0.7s; }
+    </style>
+
     <div class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-slate-50">
         <div class="py-8 px-4 sm:px-6 lg:px-8">
             <div class="max-w-7xl mx-auto">
 
                 <!-- Header Section -->
-                <div class="mb-8">
+                <div class="mb-8 animate-fade-in-left">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h1 class="text-3xl font-bold text-slate-800">Dashboard</h1>
@@ -47,7 +90,7 @@
                     
                     <!-- Total Barang Card -->
                     <a href="{{ route('items.index') }}"
-                       class="group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-sky-200 transition-all duration-300 overflow-hidden">
+                       class="stat-card group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-sky-200 transition-all duration-300 overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-100 to-sky-50 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
                         <div class="relative flex items-start justify-between">
                             <div>
@@ -60,7 +103,7 @@
                                     Lihat detail
                                 </p>
                             </div>
-                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/30">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:animate-float">
                                 <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
@@ -70,7 +113,7 @@
 
                     <!-- Stok Menipis Card -->
                     <a href="{{ route('items.index', ['filter' => 'low-stock']) }}"
-                       class="group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-amber-200 transition-all duration-300 overflow-hidden">
+                       class="stat-card group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-amber-200 transition-all duration-300 overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-100 to-amber-50 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
                         <div class="relative flex items-start justify-between">
                             <div>
@@ -83,7 +126,7 @@
                                     Perlu restok
                                 </p>
                             </div>
-                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:animate-float">
                                 <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                 </svg>
@@ -93,7 +136,7 @@
 
                     <!-- Stok Habis Card -->
                     <a href="{{ route('items.index', ['filter' => 'out-of-stock']) }}"
-                       class="group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-rose-200 transition-all duration-300 overflow-hidden">
+                       class="stat-card group relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-rose-200 transition-all duration-300 overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-rose-50 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
                         <div class="relative flex items-start justify-between">
                             <div>
@@ -106,7 +149,7 @@
                                     Segera pesan
                                 </p>
                             </div>
-                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:animate-float">
                                 <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                                 </svg>
@@ -119,49 +162,57 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     
                     <!-- Stock Movement Chart -->
-                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="chart-card bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-white">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-lg font-semibold text-slate-800">Pergerakan Stok</h3>
-                                    <p class="text-sm text-slate-500 mt-0.5">Berdasarkan tanggal transaksi</p>
+                                    <p class="text-sm text-slate-500 mt-0.5">7 hari terakhir</p>
                                 </div>
-                                <div class="flex items-center gap-4 text-sm">
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                                        <span class="text-slate-600">Masuk</span>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-4 text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                            <span class="text-slate-600">Masuk</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                                            <span class="text-slate-600">Keluar</span>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-                                        <span class="text-slate-600">Keluar</span>
-                                    </div>
+                                    <a href="{{ route('dashboard.rekap') }}" class="flex items-center gap-1.5 px-3 py-1.5 text-sm text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors" title="Lihat Rekap Bulanan">
+                                        <span>Rekap</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                    </a>
                                 </div>
                             </div>
                         </div>
-                        <div class="p-6">
-                            <div class="relative h-72">
+                        <div class="p-4 pt-2">
+                            <div style="height: 280px;">
                                 <canvas id="stockMovementChart"></canvas>
                             </div>
                         </div>
                     </div>
 
                     <!-- Stock Distribution Chart -->
-                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="chart-card bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-white">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <h3 class="text-lg font-semibold text-slate-800">Distribusi Stok</h3>
                                     <p class="text-sm text-slate-500 mt-0.5">Berdasarkan kategori</p>
                                 </div>
-                                <button onclick="refreshData()" class="p-2 rounded-xl hover:bg-sky-100 text-sky-600 transition-colors" title="Refresh Data">
+                                <button onclick="refreshData()" class="p-2 rounded-xl hover:bg-sky-100 text-sky-600 transition-colors hover:rotate-180 duration-500" title="Refresh Data">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <div class="p-6">
-                            <div class="relative h-72">
+                        <div class="p-4 pt-2">
+                            <div class="relative" style="height: 280px;">
                                 <canvas id="stockDistributionChart"></canvas>
                             </div>
                         </div>
@@ -172,7 +223,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
                     <!-- Recent Stock In -->
-                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="activity-card bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -223,7 +274,7 @@
                     </div>
 
                     <!-- Recent Stock Out -->
-                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="activity-card bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                         <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-orange-50 to-white">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -389,65 +440,83 @@
                         plugins: {
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: '#1e293b',
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                titleColor: '#1e293b',
+                                bodyColor: '#475569',
+                                borderColor: '#e2e8f0',
+                                borderWidth: 1,
                                 titleFont: { size: 13, weight: 'bold' },
                                 bodyFont: { size: 12 },
                                 padding: 12,
                                 cornerRadius: 10,
-                                displayColors: true
+                                boxPadding: 6,
+                                usePointStyle: true,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y + ' unit';
+                                    }
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                left: 5,
+                                right: 15,
+                                top: 10,
+                                bottom: 5
                             }
                         },
                         scales: {
                             x: {
                                 grid: { display: false },
+                                border: { display: false },
                                 ticks: { 
                                     font: { size: 11 }, 
                                     color: '#64748b',
-                                    maxRotation: 45,
-                                    minRotation: 45
+                                    maxRotation: 0,
+                                    minRotation: 0,
+                                    padding: 4
                                 }
                             },
                             y: {
                                 beginAtZero: true,
+                                border: { display: false },
                                 grid: { color: '#f1f5f9', drawBorder: false },
                                 ticks: { 
-                                    font: { size: 11 }, 
-                                    color: '#64748b',
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        interaction: { intersect: false, mode: 'index' }
-                    },
-                    plugins: [{
-                        id: 'chartClickHandler',
-                        afterEvent: function(chart, event) {
-                            if (event.event.type === 'click') {
-                                const canvasPosition = Chart.helpers.getRelativePosition(event.event, chart);
-                                const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
-                                const dataY = chart.scales.y.getValueForPixel(canvasPosition.y);
-                                
-                                // Get the elements at this position
-                                const elements = chart.getElementsAtEventForMode(
-                                    event.event,
-                                    'nearest',
-                                    { intersect: true },
-                                    true
-                                );
-                                
-                                if (elements.length > 0) {
-                                    const element = elements[0];
-                                    const datasetLabel = chart.data.datasets[element.datasetIndex].label;
-                                    
-                                    if (datasetLabel === 'Barang Masuk') {
-                                        window.location.href = '{{ route("stock-ins.index") }}';
-                                    } else if (datasetLabel === 'Barang Keluar') {
-                                        window.location.href = '{{ route("stock-outs.index") }}';
+                                    font: { size: 10 }, 
+                                    color: '#94a3b8',
+                                    stepSize: 1,
+                                    padding: 4,
+                                    callback: function(value) {
+                                        return value + ' unit';
                                     }
                                 }
                             }
+                        },
+                        interaction: { intersect: true, mode: 'nearest' },
+                        onHover: function(event, elements, chart) {
+                            const canvas = chart.canvas;
+                            if (elements.length > 0) {
+                                canvas.style.cursor = 'pointer';
+                            } else {
+                                canvas.style.cursor = 'default';
+                            }
+                        },
+                        onClick: function(event, elements, chart) {
+                            if (elements.length > 0) {
+                                const element = elements[0];
+                                const datasetIndex = element.datasetIndex;
+                                const datasetLabel = chart.data.datasets[datasetIndex].label;
+                                
+                                if (datasetLabel === 'Barang Masuk') {
+                                    window.location.href = '{{ route("stock-ins.index") }}';
+                                } else if (datasetLabel === 'Barang Keluar') {
+                                    window.location.href = '{{ route("stock-outs.index") }}';
+                                }
+                            }
                         }
-                    }]
+                    }
                 });
             }
 
@@ -642,3 +711,4 @@
         }
     </script>
 </x-app-layout>
+w

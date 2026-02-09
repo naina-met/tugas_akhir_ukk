@@ -18,12 +18,14 @@ class ReportController extends Controller
         $isSuperAdmin = (strtolower($authUser->role) === 'superadmin');
 
         // --- 1. AMBIL DATA DASAR (UNION) ---
+        // Gunakan date yang diinput user saat transaksi, bukan created_at
         $laporanMasuk = DB::table('stock_ins')
             ->join('items', 'stock_ins.item_id', '=', 'items.id')
             ->join('users', 'stock_ins.user_id', '=', 'users.id')
             ->select(
                 'stock_ins.id',
-                'stock_ins.created_at as tanggal',
+                'stock_ins.date as tanggal',  // Gunakan date bukan created_at
+                'stock_ins.created_at as created_timestamp', // Simpan created_at untuk sorting
                 'items.id as item_id',
                 'items.name as barang',
                 DB::raw("'Barang Masuk' as jenis_transaksi"),
@@ -41,7 +43,8 @@ class ReportController extends Controller
             ->join('users', 'stock_outs.user_id', '=', 'users.id')
             ->select(
                 'stock_outs.id',
-                'stock_outs.created_at as tanggal',
+                'stock_outs.date as tanggal',  // Gunakan date bukan created_at
+                'stock_outs.created_at as created_timestamp', // Simpan created_at untuk sorting
                 'items.id as item_id',
                 'items.name as barang',
                 DB::raw("'Barang Keluar' as jenis_transaksi"),
@@ -85,18 +88,44 @@ class ReportController extends Controller
             $query->where('tipe', $request->jenis_transaksi);
         }
 
-        // Ambil data urut Ascending untuk hitung saldo berjalan dengan benar
-        $reports = $query->orderBy('tanggal', 'asc')->get();
+        // Ambil data urut Ascending berdasarkan tanggal transaksi dan created_at untuk hitung saldo berjalan
+        $reports = $query->orderBy('tanggal', 'asc')
+                         ->orderBy('created_timestamp', 'asc')
+                         ->get();
 
-        // --- 3. HITUNG SISA STOK RILL (GLOBAL) - TIDAK BOLEH MINUS ---
+        // --- 3. HITUNG SISA STOK SEBAGAI RUNNING BALANCE ---
+        // Kelompokkan per item dan hitung running balance
+        $itemStocks = []; // Tracking stok per item
+        
+        // Pertama, ambil stok awal sebelum transaksi pertama yang ditampilkan
+        // Dengan cara menghitung semua transaksi SEBELUM tanggal pertama yang ditampilkan
         foreach ($reports as $report) {
-            // Gunakan InventoryReport untuk menghitung stok yang sinkron dengan halaman Items
-            // Ini menghitung stok TERKINI (sampai hari ini) untuk item tersebut
-            $report->sisa_stock = InventoryReport::calculateFinalStock($report->item_id);
+            $itemId = $report->item_id;
+            
+            if (!isset($itemStocks[$itemId])) {
+                // Hitung stok pada saat transaksi ini terjadi
+                // Stok = semua masuk sampai tanggal ini - semua keluar sampai tanggal ini
+                $itemStocks[$itemId] = InventoryReport::calculateStockAtDate(
+                    $itemId, 
+                    $report->created_timestamp
+                );
+            } else {
+                // Update running balance
+                if ($report->tipe === 'IN') {
+                    $itemStocks[$itemId] += $report->jumlah;
+                } else {
+                    $itemStocks[$itemId] -= $report->jumlah;
+                }
+            }
+            
+            // Set sisa_stock untuk report ini
+            $report->sisa_stock = max(0, $itemStocks[$itemId]);
         }
 
         // Balikkan urutan ke Descending (terbaru di atas) untuk tampilan user
-        $reports = $reports->sortByDesc('tanggal')->values();
+        $reports = $reports->sortByDesc('tanggal')
+                          ->sortByDesc('created_timestamp')
+                          ->values();
 
         // --- 4. DATA UNTUK VIEW ---
         // Untuk superadmin: tampilkan semua user untuk filter

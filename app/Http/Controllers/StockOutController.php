@@ -6,20 +6,28 @@ use App\Models\StockOut;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class StockOutController extends Controller
 {
     public function index(Request $request)
     {
-        $query = StockOut::with('item', 'user');
-        
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            })->orWhere('outgoing_destination', 'like', "%{$search}%");
+        $query = StockOut::with(['item', 'user']);
+
+        if ($request->filled('search')) {
+            $search = strtolower(trim($request->search));
+
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('item', fn ($i) =>
+                    $i->where('name', 'like', "%{$search}%")
+                )->orWhere('outgoing_destination', 'like', "%{$search}%");
+            });
         }
-        
+
+        if ($request->filled('outgoing_destination')) {
+            $query->where('outgoing_destination', trim(strtolower($request->outgoing_destination)));
+        }
+
         $stockOuts = $query->latest()->paginate(10);
 
         return view('stock_outs.index', compact('stockOuts'));
@@ -27,20 +35,44 @@ class StockOutController extends Controller
 
     public function create()
     {
-        $items = Item::all();
+        $items = Item::orderBy('name')->get();
         return view('stock_outs.create', compact('items'));
     }
 
     public function store(Request $request)
     {
-        // ✅ VALIDASI AMAN (SINKRON DENGAN DROPDOWN)
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'item_id' => 'required|exists:items,id',
-            'quantity' => 'required|integer|min:1',
-            'outgoing_destination' => 'required|string|max:50',
-            'description' => 'nullable|string',
+        // 🔥 NORMALISASI INPUT SEBELUM VALIDASI
+        $request->merge([
+            'outgoing_destination' => strtolower(trim($request->outgoing_destination)),
         ]);
+
+        $validated = $request->validate([
+            'date' => ['required', 'date'],
+            'item_id' => ['required', 'exists:items,id'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'outgoing_destination' => [
+                'required',
+                Rule::in([
+                    'penjualan',
+                    'pemakaian_internal',
+                    'peminjaman',
+                    'rusak'
+                ]),
+            ],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        // ❌ LOGIKA TIDAK VALID
+        if (
+            $validated['outgoing_destination'] === 'rusak' &&
+            str_contains(strtolower($validated['description'] ?? ''), 'pinjam')
+        ) {
+            return back()
+                ->withErrors([
+                    'outgoing_destination' => 'Barang rusak tidak bisa dipinjam.'
+                ])
+                ->withInput();
+        }
 
         $item = Item::findOrFail($validated['item_id']);
 
@@ -52,8 +84,7 @@ class StockOutController extends Controller
                 ->withInput();
         }
 
-        $item->stock -= $validated['quantity'];
-        $item->save();
+        $item->decrement('stock', $validated['quantity']);
 
         StockOut::create([
             'date' => $validated['date'],
@@ -66,32 +97,56 @@ class StockOutController extends Controller
 
         return redirect()
             ->route('stock-outs.index')
-            ->with('success', 'Stock out recorded successfully.');
+            ->with('success', 'Stok keluar berhasil dicatat.');
     }
 
     public function edit(StockOut $stockOut)
     {
-        $items = Item::all();
+        $items = Item::orderBy('name')->get();
         return view('stock_outs.edit', compact('stockOut', 'items'));
     }
 
     public function update(Request $request, StockOut $stockOut)
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'item_id' => 'required|exists:items,id',
-            'quantity' => 'required|integer|min:1',
-            'outgoing_destination' => 'required|string|max:50',
-            'description' => 'nullable|string',
+        $request->merge([
+            'outgoing_destination' => strtolower(trim($request->outgoing_destination)),
         ]);
+
+        $validated = $request->validate([
+            'date' => ['required', 'date'],
+            'item_id' => ['required', 'exists:items,id'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'outgoing_destination' => [
+                'required',
+                Rule::in([
+                    'penjualan',
+                    'pemakaian_internal',
+                    'peminjaman',
+                    'rusak'
+                ]),
+            ],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        if (
+            $validated['outgoing_destination'] === 'rusak' &&
+            str_contains(strtolower($validated['description'] ?? ''), 'pinjam')
+        ) {
+            return back()
+                ->withErrors([
+                    'outgoing_destination' => 'Barang rusak tidak bisa dipinjam.'
+                ])
+                ->withInput();
+        }
 
         $oldItem = Item::findOrFail($stockOut->item_id);
         $newItem = Item::findOrFail($validated['item_id']);
 
-        $oldItem->stock += $stockOut->quantity;
-        $oldItem->save();
+        $oldItem->increment('stock', $stockOut->quantity);
 
         if ($validated['quantity'] > $newItem->stock) {
+            $oldItem->decrement('stock', $stockOut->quantity);
+
             return back()
                 ->withErrors([
                     'quantity' => 'Stok tidak mencukupi. Sisa stok: ' . $newItem->stock
@@ -99,32 +154,24 @@ class StockOutController extends Controller
                 ->withInput();
         }
 
-        $newItem->stock -= $validated['quantity'];
-        $newItem->save();
+        $newItem->decrement('stock', $validated['quantity']);
 
-        $stockOut->update([
-            'date' => $validated['date'],
-            'item_id' => $validated['item_id'],
-            'quantity' => $validated['quantity'],
-            'outgoing_destination' => $validated['outgoing_destination'],
-            'description' => $validated['description'],
-        ]);
+        $stockOut->update($validated);
 
         return redirect()
             ->route('stock-outs.index')
-            ->with('success', 'Stock out updated successfully.');
+            ->with('success', 'Data stok keluar berhasil diperbarui.');
     }
 
     public function destroy(StockOut $stockOut)
     {
         $item = Item::findOrFail($stockOut->item_id);
-        $item->stock += $stockOut->quantity;
-        $item->save();
+        $item->increment('stock', $stockOut->quantity);
 
         $stockOut->delete();
 
         return redirect()
             ->route('stock-outs.index')
-            ->with('success', 'Stock out deleted successfully.');
+            ->with('success', 'Data stok keluar berhasil dihapus.');
     }
 }

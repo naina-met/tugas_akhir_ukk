@@ -165,7 +165,7 @@
             </div>
 
             <!-- Remember Me & Forgot Password -->
-            <div class="flex items-center justify-between pt-1">
+            {{-- <div class="flex items-center justify-between pt-1">
                 <label class="flex items-center gap-2.5 cursor-pointer group">
                     <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-sky-500 focus:ring-sky-400 focus:ring-offset-0">
                     <span class="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">Ingat saya</span>
@@ -175,7 +175,7 @@
                     Lupa password?
                 </a>
                 @endif
-            </div>
+            </div> --}}
 
             <!-- Submit Button -->
             <button type="submit" class="btn-login w-full py-3.5 rounded-xl text-white font-semibold text-sm mt-2">

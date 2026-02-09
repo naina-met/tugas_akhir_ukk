@@ -1,15 +1,16 @@
 <x-app-layout>
     {{-- Navbar sengaja dimatikan --}}
 
+    <!-- Page Background -->
     <div class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-sky-100 py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
 
-            <!-- Title -->
+            <!-- Page Title -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-slate-800">
-                    📤 Edit Stok Keluar
+                    📤 Tambah Stok Keluar
                 </h1>
-                <p class="text-slate-500 mt-1">Perbarui informasi barang keluar</p>
+                <p class="text-slate-500 mt-1">Catat barang yang keluar dari gudang</p>
             </div>
 
             <!-- Error Alert -->
@@ -24,15 +25,14 @@
                 </div>
             @endif
 
-            <!-- Form -->
+            <!-- Form Card -->
             <form id="stockOutForm"
-                  action="{{ route('stock-outs.update', $stockOut) }}"
+                  action="{{ route('stock-outs.store') }}"
                   method="POST"
                   class="bg-white rounded-2xl shadow-xl
                          border border-slate-200
                          p-8 space-y-6">
                 @csrf
-                @method('PUT')
 
                 <!-- Date -->
                 <div>
@@ -41,7 +41,7 @@
                     </label>
                     <input type="date"
                            name="date"
-                           value="{{ $stockOut->date }}"
+                           value="{{ old('date') }}"
                            required
                            class="w-full rounded-lg border border-slate-300 px-4 py-2.5
                                   text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
@@ -64,7 +64,7 @@
                         <option value="">-- Pilih Item --</option>
                         @foreach ($items as $item)
                             <option value="{{ $item->id }}"
-                                {{ $item->id == $stockOut->item_id ? 'selected' : '' }}>
+                                {{ old('item_id') == $item->id ? 'selected' : '' }}>
                                 {{ $item->name }}
                             </option>
                         @endforeach
@@ -81,7 +81,7 @@
                     </label>
                     <input type="number"
                            name="quantity"
-                           value="{{ $stockOut->quantity }}"
+                           value="{{ old('quantity') }}"
                            required
                            min="1"
                            placeholder="0"
@@ -98,29 +98,32 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-2.5">
                         📍 Tujuan Keluar
                     </label>
-                    <select name="outgoing_destination"
-                            required
-                            class="w-full rounded-lg border border-slate-300 px-4 py-2.5
-                                   text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
-                                   focus:border-rose-400 focus:outline-none transition">
-                        <option value="">-- Pilih Tujuan --</option>
-                        <option value="Penjualan"
-                            {{ $stockOut->outgoing_destination == 'Penjualan' ? 'selected' : '' }}>
-                            🛍️ Penjualan
-                        </option>
-                        <option value="Pemakaian internal"
-                            {{ $stockOut->outgoing_destination == 'Pemakaian internal' ? 'selected' : '' }}>
-                            🔧 Pemakaian Internal
-                        </option>
-                        <option value="Peminjaman"
-                            {{ $stockOut->outgoing_destination == 'Peminjaman' ? 'selected' : '' }}>
-                            📦 Peminjaman
-                        </option>
-                        <option value="Rusak"
-                            {{ $stockOut->outgoing_destination == 'Rusak' ? 'selected' : '' }}>
-                            💔 Barang Rusak
-                        </option>
-                    </select>
+                  <select name="outgoing_destination" required
+    class="w-full rounded-lg border border-slate-300 px-4 py-2.5">
+
+    <option value="">-- Pilih Tujuan --</option>
+
+    <option value="penjualan"
+        {{ $stockOut->outgoing_destination === 'penjualan' ? 'selected' : '' }}>
+        🛍️ Penjualan
+    </option>
+
+    <option value="pemakaian_internal"
+        {{ $stockOut->outgoing_destination === 'pemakaian_internal' ? 'selected' : '' }}>
+        🔧 Pemakaian Internal
+    </option>
+
+    <option value="peminjaman"
+        {{ $stockOut->outgoing_destination === 'peminjaman' ? 'selected' : '' }}>
+        📦 Peminjaman
+    </option>
+
+    <option value="rusak"
+        {{ $stockOut->outgoing_destination === 'rusak' ? 'selected' : '' }}>
+        💔 Barang Rusak
+    </option>
+</select>
+
                     @error('outgoing_destination')
                         <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -133,10 +136,10 @@
                     </label>
                     <textarea name="description"
                               rows="4"
-                              placeholder="Masukkan keterangan (opsional)..."
                               class="w-full rounded-lg border border-slate-300 px-4 py-2.5
                                      text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
-                                     focus:border-rose-400 focus:outline-none transition">{{ $stockOut->description }}</textarea>
+                                     focus:border-rose-400 focus:outline-none transition"
+                              placeholder="Masukkan keterangan (opsional)">{{ old('description') }}</textarea>
                     @error('description')
                         <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -155,20 +158,19 @@
                             class="px-6 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-rose-600
                                    text-white shadow-md hover:shadow-lg hover:-translate-y-0.5
                                    transition-all font-medium text-sm">
-                        ✅ Perbarui
+                        ✅ Simpan
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Anti Double Submit -->
+    <!-- Disable submit -->
     <script>
-        document.getElementById('stockOutForm')
-            .addEventListener('submit', function () {
-                const btn = document.getElementById('submitBtn');
-                btn.disabled = true;
-                btn.innerText = 'Updating...';
-            });
+        document.getElementById('stockOutForm').addEventListener('submit', function () {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+        });
     </script>
 </x-app-layout>

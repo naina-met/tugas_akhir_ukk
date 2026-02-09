@@ -98,20 +98,29 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    @if($stockOut->outgoing_destination === 'Rusak')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
-                                            💔 Rusak
-                                        </span>
-                                    @elseif($stockOut->outgoing_destination === 'Penjualan')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                            🛍️ Penjualan
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                                            🔧 Pemakaian Internal
-                                        </span>
-                                    @endif
-                                </td>
+    @if($stockOut->outgoing_destination === 'rusak')
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
+            💔 Rusak
+        </span>
+    @elseif($stockOut->outgoing_destination === 'penjualan')
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            🛍️ Penjualan
+        </span>
+    @elseif($stockOut->outgoing_destination === 'peminjaman')
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+            🤝 Peminjaman
+        </span>
+    @elseif($stockOut->outgoing_destination === 'pemakaian_internal')
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+            🏢 Internal
+        </span>
+    @else
+        {{-- Fallback untuk menampilkan data asli jika tidak ada yang cocok --}}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+            {{ ucwords(str_replace('_', ' ', $stockOut->outgoing_destination)) }}
+        </span>
+    @endif
+</td>
                                 <td class="px-6 py-4 text-sm text-slate-600">{{ $stockOut->description ?? '-' }}</td>
                                 <td class="px-6 py-4 text-sm text-slate-600">{{ $stockOut->user->username }}</td>
                                 <td class="px-6 py-4">

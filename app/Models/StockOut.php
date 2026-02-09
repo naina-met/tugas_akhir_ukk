@@ -9,6 +9,8 @@ class StockOut extends Model
 {
     use HasFactory;
 
+    protected $table = 'stock_outs';
+
     protected $fillable = [
         'date',
         'item_id',
@@ -19,14 +21,20 @@ class StockOut extends Model
     ];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'date', // cukup date, jangan datetime
     ];
 
+    /**
+     * Relasi ke item
+     */
     public function item()
     {
         return $this->belongsTo(Item::class);
     }
 
+    /**
+     * Relasi ke user
+     */
     public function user()
     {
         return $this->belongsTo(User::class);

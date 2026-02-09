@@ -10,25 +10,51 @@ use App\Http\Controllers\{
     UserController,
     DashboardController,
     DamageReportController,
-    ExportController
+    ExportController,
+    ReportController,
+    RekapDashboardController
 };
 
+/*
+|--------------------------------------------------------------------------
+| PUBLIC
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
     return view('welcome');
 });
 
-// ================= DASHBOARD =================
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware('auth')
-    ->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
 
-// ================= AUTH AREA =================
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // ===== DASHBOARD REKAP =====
+    Route::get('/dashboard-rekap', [RekapDashboardController::class, 'index'])
+        ->name('dashboard.rekap');
+});
+
+/*
+|--------------------------------------------------------------------------
+| AUTH AREA
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
 
     // ===== PROFILE =====
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
 
     // ===== MASTER DATA =====
     Route::resource('categories', CategoryController::class);
@@ -36,11 +62,13 @@ Route::middleware('auth')->group(function () {
 
     // ===== STOCK IN =====
     Route::resource('stock-ins', StockInController::class);
+
     Route::get('/export-stock-ins', [ExportController::class, 'exportStockIns'])
         ->name('export.stockins');
 
     // ===== STOCK OUT =====
     Route::resource('stock-outs', StockOutController::class);
+
     Route::get('/export-stock-outs', [ExportController::class, 'exportStockOuts'])
         ->name('export.stockouts');
 
@@ -76,24 +104,33 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/export-damage-reports', [ExportController::class, 'exportDamageReports'])
         ->name('export.damagereports');
+
+    // ===== LAPORAN BARANG =====
+    Route::get('/reports', [ReportController::class, 'index'])
+        ->name('reports.index');
 });
 
-// ================= ADMIN USERS =================
+/*
+|--------------------------------------------------------------------------
+| ADMIN USERS
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'can:manage-users'])->group(function () {
     Route::resource('users', UserController::class);
 });
 
-// ================= ARGON TEST =================
+/*
+|--------------------------------------------------------------------------
+| TEST VIEW
+|--------------------------------------------------------------------------
+*/
 Route::get('/argon', function () {
     return view('layouts.argon');
 })->middleware('auth');
 
-// ================= AUTH ROUTES (LOGIN, LOGOUT, REGISTER) =================
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES
+|--------------------------------------------------------------------------
+*/
 require __DIR__ . '/auth.php';
-
-// ===== LAPORAN BARANG MASUK & KELUAR =====
-use App\Http\Controllers\ReportController;
-
-Route::get('/reports', [ReportController::class, 'index'])
-    ->name('reports.index')
-    ->middleware('auth');
