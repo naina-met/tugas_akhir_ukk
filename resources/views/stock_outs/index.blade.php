@@ -121,6 +121,7 @@
         </span>
     @endif
 </td>
+
                                 <td class="px-6 py-4 text-sm text-slate-600">{{ $stockOut->description ?? '-' }}</td>
                                 <td class="px-6 py-4 text-sm text-slate-600">{{ $stockOut->user->username }}</td>
                                 <td class="px-6 py-4">
