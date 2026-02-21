@@ -81,7 +81,7 @@ class ExportController extends Controller
 
     public function exportItems()
     {
-        $items = Item::with('category')->get();
+        $items = Item::with('category', 'user')->get();
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -89,7 +89,7 @@ class ExportController extends Controller
         $sheet->setCellValue('A1', 'ITEMS LIST');
 
         // Header tabel
-        $sheet->fromArray(['Name', 'Code', 'Category', 'Stock', 'Unit'], null, 'A2');
+        $sheet->fromArray(['Name', 'Code', 'Category', 'Stock', 'Condition', 'Unit', 'Created By'], null, 'A2');
 
         $row = 3;
         foreach ($items as $item) {
@@ -97,11 +97,13 @@ class ExportController extends Controller
             $sheet->setCellValue("B{$row}", $item->code);
             $sheet->setCellValue("C{$row}", $item->category->name);
             $sheet->setCellValue("D{$row}", $item->stock);
-            $sheet->setCellValue("E{$row}", $item->unit);
+            $sheet->setCellValue("E{$row}", $this->getConditionLabel($item->condition));
+            $sheet->setCellValue("F{$row}", $item->unit);
+            $sheet->setCellValue("G{$row}", $item->user->username ?? '-');
             $row++;
         }
 
-        $this->styleSheet($sheet, 'E', $row - 1);
+        $this->styleSheet($sheet, 'G', $row - 1);
         return $this->downloadSheet($spreadsheet, 'items.xlsx');
     }
 
@@ -135,19 +137,23 @@ class ExportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $sheet->setCellValue('A1', 'STOCK OUT LIST');
-        $sheet->fromArray(['Date', 'Item', 'Quantity', 'Destination', 'User'], null, 'A2');
+        $sheet->fromArray(['Date', 'Item', 'Quantity', 'Destination', 'Type', 'Return Date', 'Status', 'User'], null, 'A2');
 
         $row = 3;
         foreach ($stockOuts as $stockOut) {
+            $status = $stockOut->is_borrowed ? ($stockOut->returned_at ? 'Returned' : 'On Loan') : 'Permanent';
             $sheet->setCellValue("A{$row}", $stockOut->date);
             $sheet->setCellValue("B{$row}", $stockOut->item->name);
             $sheet->setCellValue("C{$row}", $stockOut->quantity);
             $sheet->setCellValue("D{$row}", $stockOut->outgoing_destination);
-            $sheet->setCellValue("E{$row}", $stockOut->user->username);
+            $sheet->setCellValue("E{$row}", $stockOut->is_borrowed ? 'Borrowed' : 'Permanent');
+            $sheet->setCellValue("F{$row}", $stockOut->return_date ? $stockOut->return_date->format('Y-m-d') : '-');
+            $sheet->setCellValue("G{$row}", $status);
+            $sheet->setCellValue("H{$row}", $stockOut->user->username);
             $row++;
         }
 
-        $this->styleSheet($sheet, 'E', $row - 1);
+        $this->styleSheet($sheet, 'H', $row - 1);
         return $this->downloadSheet($spreadsheet, 'stock_outs.xlsx');
     }
 

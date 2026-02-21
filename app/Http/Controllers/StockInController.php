@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StockIn;
 use App\Models\Item;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -53,6 +54,15 @@ class StockInController extends Controller
         $item->stock += $request->quantity;
         $item->save();
 
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Tambah',
+            'module' => 'Stock In',
+            'item_name' => $item->name,
+            'details' => json_encode(['stock_in_id' => $stockIn->id, 'quantity' => $request->quantity]),
+        ]);
+
         return redirect()->route('stock-ins.index')
             ->with('success', 'Stock in added successfully.');
     }
@@ -101,8 +111,8 @@ class StockInController extends Controller
         $item = Item::findOrFail($stockIn->item_id);
         $item->stock -= $stockIn->quantity;
         $item->save();
-
-        $stockIn->delete();
+        $itemName = $item->name;
+        ActivityLog::create(['user_id' => Auth::id(), 'action' => 'Hapus', 'module' => 'Stock In', 'item_name' => $itemName, 'details' => json_encode(['stock_in_id' => $stockIn->id])]);        $stockIn->delete();
 
         return redirect()->route('stock-ins.index')
             ->with('success', 'Stock in deleted successfully.');

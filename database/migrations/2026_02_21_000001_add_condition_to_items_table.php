@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('categories', function (Blueprint $table) {
-    $table->id();
-
-    $table->string('jenis_barang'); // modal / habis pakai
-    $table->string('kelompok_barang'); // diketik manual
-   
-    $table->timestamps();
-});
- 
+        Schema::table('items', function (Blueprint $table) {
+            $table->enum('condition', ['baik', 'rusak_ringan', 'rusak_berat'])
+                  ->default('baik')
+                  ->after('stock');
+        });
     }
 
     /**
@@ -27,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::table('items', function (Blueprint $table) {
+            $table->dropColumn('condition');
+        });
     }
 };

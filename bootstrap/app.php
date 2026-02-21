@@ -11,7 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Add admin approval check to auth group
+        $middleware->appendToGroup('auth', \App\Http\Middleware\CheckAdminApproval::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

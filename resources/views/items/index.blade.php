@@ -75,6 +75,9 @@
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Kategori</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Stok</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Satuan</th>
+                                @if(Auth::user()->role === 'admin')
+                                    <th class="px-6 py-4 text-sm font-semibold text-slate-700">Kondisi</th>
+                                @endif
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Dibuat Oleh</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-center text-slate-700">Aksi</th>
                             </tr>
@@ -99,6 +102,22 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-slate-600">{{ $item->unit }}</td>
+                                    @if(Auth::user()->role === 'admin')
+                                        <td class="px-6 py-4">
+                                            @php
+                                                $conditionMap = [
+                                                    'baik' => ['bg-emerald-100', 'text-emerald-700', 'Baik'],
+                                                    'rusak_ringan' => ['bg-amber-100', 'text-amber-700', 'Rusak Ringan'],
+                                                    'rusak_berat' => ['bg-rose-100', 'text-rose-700', 'Rusak Berat']
+                                                ];
+                                                $condition = $item->condition ?? 'baik';
+                                                $colors = $conditionMap[$condition] ?? $conditionMap['baik'];
+                                            @endphp
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $colors[0] }} {{ $colors[1] }}">
+                                                {{ $colors[2] }}
+                                            </span>
+                                        </td>
+                                    @endif
                                     <td class="px-6 py-4">
                                         @if($item->user)
                                             <div class="flex items-center gap-2">
@@ -111,26 +130,32 @@
                                             <span class="text-xs text-slate-400">-</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-center gap-2">
-                                            @if(Auth::user()->role === 'superadmin' || (Auth::user()->role === 'admin' && $item->user_id === Auth::id()))
-                                                <a href="{{ route('items.edit', $item) }}" class="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 rounded-lg text-xs font-medium transition">
-                                                    Ubah
-                                                </a>
-                                                <form action="{{ route('items.destroy', $item) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button" onclick="confirmDelete(event, '{{ $item->name }}', 'item')" class="px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200 rounded-lg text-xs font-medium transition">
-                                                        Hapus
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </td>
+                                  <td class="px-6 py-4">
+    <div class="flex justify-center gap-2">
+        @if(Auth::check())
+
+            <a href="{{ route('items.edit', $item) }}"
+                class="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 rounded-lg text-xs font-medium transition">
+                Ubah
+            </a>
+
+            <form action="{{ route('items.destroy', $item) }}" method="POST" class="inline">
+                @csrf
+                @method('DELETE')
+                <button type="button"
+                    onclick="confirmDelete(event, '{{ $item->name }}', 'item')"
+                    class="px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200 rounded-lg text-xs font-medium transition">
+                    Hapus
+                </button>
+            </form>
+        @endif
+    </div>
+</td>
+
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center">
+                                    <td colspan="{{ Auth::user()->role === 'admin' ? '9' : '8' }}" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center gap-3">
                                             <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>

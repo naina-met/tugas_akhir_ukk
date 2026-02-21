@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\JenisBarang;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -21,7 +22,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'superadmin@example.com',
             'password' => bcrypt('12345678'), // Ubah password ini di produksi
             'role' => 'Superadmin',
-            'status' => true
+            'status' => true,
+            'approved' => true // Superadmin tidak perlu approval
         ]);
+
+        // Seed Jenis Barang - 2 pilihan utama
+        JenisBarang::create(['name' => 'Modal']);
+        JenisBarang::create(['name' => 'Barang Habis Pakai']);
     }
 }

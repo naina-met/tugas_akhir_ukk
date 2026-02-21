@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     DamageReportController,
     ExportController,
     ReportController,
-    RekapDashboardController
+    RekapDashboardController,
+    ActivityLogController
 };
 
 /*
@@ -67,7 +68,18 @@ Route::middleware('auth')->group(function () {
         ->name('export.stockins');
 
     // ===== STOCK OUT =====
-    Route::resource('stock-outs', StockOutController::class);
+    // View-only routes for superadmin
+    Route::get('stock-outs', [StockOutController::class, 'index'])->name('stock-outs.index');
+    Route::get('stock-outs/{stockOut}', [StockOutController::class, 'show'])->name('stock-outs.show');
+    
+    // Restrict superadmin from managing stock out
+    Route::middleware('can:manage-stock-out')->group(function () {
+        Route::get('stock-outs/create', [StockOutController::class, 'create'])->name('stock-outs.create');
+        Route::post('stock-outs', [StockOutController::class, 'store'])->name('stock-outs.store');
+        Route::get('stock-outs/{stockOut}/edit', [StockOutController::class, 'edit'])->name('stock-outs.edit');
+        Route::put('stock-outs/{stockOut}', [StockOutController::class, 'update'])->name('stock-outs.update');
+        Route::delete('stock-outs/{stockOut}', [StockOutController::class, 'destroy'])->name('stock-outs.destroy');
+    });
 
     Route::get('/export-stock-outs', [ExportController::class, 'exportStockOuts'])
         ->name('export.stockouts');
@@ -108,6 +120,23 @@ Route::middleware('auth')->group(function () {
     // ===== LAPORAN BARANG =====
     Route::get('/reports', [ReportController::class, 'index'])
         ->name('reports.index');
+
+    // ===== ACTIVITY LOGS (SUPERADMIN ONLY) =====
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+        ->name('activity-logs.index')
+        ->middleware('role:superadmin');
+});
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN REGISTRATION
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    Route::get('/admin/register', [UserController::class, 'showAdminRegister'])
+        ->name('admin.register.form');
+    Route::post('/admin/register', [UserController::class, 'adminRegister'])
+        ->name('admin.register');
 });
 
 /*
@@ -117,6 +146,10 @@ Route::middleware('auth')->group(function () {
 */
 Route::middleware(['auth', 'can:manage-users'])->group(function () {
     Route::resource('users', UserController::class);
+    Route::post('/users/{user}/approve', [UserController::class, 'approve'])
+        ->name('users.approve');
+    Route::post('/users/{user}/reject', [UserController::class, 'reject'])
+        ->name('users.reject');
 });
 
 /*
@@ -134,3 +167,11 @@ Route::get('/argon', function () {
 |--------------------------------------------------------------------------
 */
 require __DIR__ . '/auth.php';
+
+Route::get('/get-kelompok/{jenis}', function($jenis){
+    return \App\Models\KelompokBarang::where('jenis_barang_id',$jenis)->get();
+});
+
+Route::get('/get-category/{kelompok}', function($kelompok){
+    return \App\Models\Category::where('kelompok_barang_id',$kelompok)->get();
+});

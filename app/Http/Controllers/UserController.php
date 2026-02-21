@@ -6,9 +6,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
         $query = User::where('role', 'Admin');
@@ -98,5 +101,73 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', 'Admin account deleted successfully.');
+    }
+
+    /**
+     * Show admin self-registration form
+     */
+    public function showAdminRegister()
+    {
+        return view('auth.admin-register');
+    }
+
+    /**
+     * Handle admin self-registration
+     */
+    public function adminRegister(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|string|unique:users',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'phone' => 'nullable|string',
+        ]);
+
+        // Create admin with pending approval
+        User::create([
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'Admin',
+            'status' => true,
+            'approved' => false, // Pending approval
+        ]);
+
+        return redirect()
+            ->route('login')
+            ->with('success', 'Admin account created successfully. Please wait for superadmin approval.');
+    }
+
+    /**
+     * Approve admin account (Superadmin only)
+     */
+    public function approve(User $user)
+    {
+        $this->authorize('manage-users');
+
+        if ($user->role !== 'Admin') {
+            return back()->with('error', 'Only admin accounts can be approved.');
+        }
+
+        // Approve dan set status active otomatis
+        $user->update(['approved' => true, 'status' => true]);
+
+        return back()->with('success', 'Admin account approved and activated successfully.');
+    }
+
+    /**
+     * Reject admin account (Superadmin only)
+     */
+    public function reject(User $user)
+    {
+        $this->authorize('manage-users');
+
+        if ($user->role !== 'Admin') {
+            return back()->with('error', 'Only admin accounts can be rejected.');
+        }
+
+        $user->update(['status' => false, 'approved' => false]);
+
+        return back()->with('success', 'Admin account rejected.');
     }
 }

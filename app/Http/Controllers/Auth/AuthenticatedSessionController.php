@@ -35,8 +35,23 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // 3. CEK STATUS USER
-        if (Auth::user()->status == 0) {
+        // 3. CEK APPROVAL STATUS UNTUK ADMIN ROLE (Superadmin tidak perlu approval)
+        if (Auth::user()->role === 'Admin') {
+            // Admin HARUS disetujui sebelum login
+            if (!Auth::user()->approved) {
+                Auth::logout();
+
+                throw ValidationException::withMessages([
+                    'email' => 'Akun admin Anda belum disetujui oleh superadmin.',
+                ]);
+            }
+
+            // Jika Admin approved, otomatis aktifkan status (bisa login ulang setelah logout)
+            Auth::user()->update(['status' => true]);
+        }
+
+        // 4. CEK STATUS USER - Harus aktif (status = true)
+        if (!Auth::user()->status) {
             Auth::logout();
 
             throw ValidationException::withMessages([
@@ -44,10 +59,10 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // 4. Regenerate session
+        // 5. Regenerate session
         $request->session()->regenerate();
 
-        // 5. Redirect
+        // 6. Redirect
         return redirect()->intended('/dashboard');
     }
 
@@ -56,6 +71,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
+        // Jika user adalah Admin, set status jadi non-aktif saat logout
+        if (Auth::check() && Auth::user()->role === 'Admin') {
+            Auth::user()->update(['status' => false]);
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

@@ -15,7 +15,10 @@ class Item extends Model
         'category_id',
         'description',
         'stock',
-        'unit', 
+        'condition',
+        'unit',
+        'qr_code',
+        'user_id',
     ];
 
     public function category()
@@ -31,5 +34,11 @@ class Item extends Model
     public function stockOuts()
     {
         return $this->hasMany(StockOut::class);
+    }
+
+    // 🔥 RELASI KE USER
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

@@ -23,6 +23,26 @@
                 @csrf
                 @method('PUT')
 
+                <!-- JENIS BARANG -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">
+                        📦 Jenis Barang
+                    </label>
+                    <select name="jenis_barang_id" id="jenis_barang_id" required 
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition">
+                        <option value="">-- Pilih Jenis Barang --</option>
+                        @foreach ($jenisBarangs as $jenis)
+                            <option value="{{ $jenis->id }}"
+                                {{ $category->jenis_barang_id == $jenis->id ? 'selected' : '' }}>
+                                {{ $jenis->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('jenis_barang_id')
+                        <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Name -->
                 <div>
                     <label for="name"

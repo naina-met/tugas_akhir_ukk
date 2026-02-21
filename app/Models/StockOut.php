@@ -16,12 +16,17 @@ class StockOut extends Model
         'item_id',
         'quantity',
         'outgoing_destination',
+        'is_borrowed',
+        'return_date',
         'description',
         'user_id',
+        'returned_at',
     ];
 
     protected $casts = [
-        'date' => 'date', // cukup date, jangan datetime
+        'date' => 'date',
+        'return_date' => 'date',
+        'returned_at' => 'datetime',
     ];
 
     /**
@@ -38,5 +43,26 @@ class StockOut extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Check if this is a permanent stock out or borrowed
+     */
+    public function isPermanent()
+    {
+        return !$this->is_borrowed || ($this->is_borrowed && $this->returned_at !== null);
+    }
+
+    /**
+     * Mark item as returned
+     */
+    public function markAsReturned()
+    {
+        $this->update(['returned_at' => now()]);
+        
+        // Restore stock when returned
+        $item = $this->item;
+        $item->stock += $this->quantity;
+        $item->save();
     }
 }

@@ -16,8 +16,8 @@
             <div class="mb-8">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-slate-800">👥 Kelola Akun Admin</h1>
-                        <p class="text-slate-500 mt-1">Kelola dan pantau semua akun administrator dalam sistem</p>
+                        <h1 class="text-3xl font-bold text-slate-800">👥 Manajemen Admin</h1>
+                        <p class="text-slate-500 mt-1">Kelola akun admin dan persetujuan</p>
                     </div>
                     
                     <div class="flex items-center gap-3">
@@ -43,10 +43,12 @@
                             </div>
                         </form>
 
-                        <a href="{{ route('users.create') }}"
-                            class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-2 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium">
-                            + Tambah Admin
-                        </a>
+                        @if(Auth::user()->role === 'Superadmin')
+                            <a href="{{ route('admin.register.form') }}"
+                                class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium">
+                                + Daftar Admin
+                            </a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -68,6 +70,7 @@
                             <th class="px-6 py-4 text-sm font-semibold text-slate-700">Nama Pengguna</th>
                             <th class="px-6 py-4 text-sm font-semibold text-slate-700">Akun</th>
                             <th class="px-6 py-4 text-sm font-semibold text-slate-700">Status</th>
+                            <th class="px-6 py-4 text-sm font-semibold text-slate-700">Persetujuan</th>
                             <th class="px-6 py-4 text-sm font-semibold text-center text-slate-700">Aksi</th>
                         </tr>
                     </thead>
@@ -98,7 +101,40 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-3">
+                                    @if($user->role === 'Superadmin')
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                            Superadmin
+                                        </span>
+                                    @elseif($user->approved)
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                            ✓ Disetujui
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                            ⏳ Menunggu
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-center gap-2">
+                                        @if(Auth::user()->role === 'Superadmin' && $user->role === 'Admin')
+                                            @if(!$user->approved)
+                                                <form action="{{ route('users.approve', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Setujui akun admin ini?');">
+                                                    @csrf
+                                                    <button type="submit" class="bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 px-3 py-1 rounded-lg text-xs font-medium transition">
+                                                        Setujui
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('users.reject', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Tolak akun admin ini?');">
+                                                    @csrf
+                                                    <button type="submit" class="bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 px-3 py-1 rounded-lg text-xs font-medium transition">
+                                                        Tolak
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+
                                         <!-- EDIT -->
                                         <a href="{{ route('users.edit', $user) }}"
                                             class="bg-sky-100 text-sky-700 border border-sky-200 hover:bg-sky-200 hover:text-sky-800 px-4 py-1.5 rounded-lg text-sm font-medium transition">
@@ -118,7 +154,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
+                                <td colspan="6" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>

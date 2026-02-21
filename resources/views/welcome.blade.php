@@ -127,11 +127,11 @@
                     <a href="{{ route('login') }}" class="px-5 py-2.5 text-sm font-semibold text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded-xl transition-all">
                         Masuk
                     </a>
-                    {{-- @if (Route::has('register'))
+                    @if (Route::has('register'))
                     <a href="{{ route('register') }}" class="btn-primary px-5 py-2.5 text-sm font-semibold text-white rounded-xl">
                         Daftar
                     </a>
-                    @endif --}}
+                    @endif
                 </div>
 
                 <!-- Mobile Menu Button -->

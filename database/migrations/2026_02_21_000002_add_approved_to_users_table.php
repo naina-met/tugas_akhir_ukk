@@ -11,15 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('categories', function (Blueprint $table) {
-    $table->id();
-
-    $table->string('jenis_barang'); // modal / habis pakai
-    $table->string('kelompok_barang'); // diketik manual
-   
-    $table->timestamps();
-});
- 
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('approved')->default(false)->after('status')->comment('Admin approval status');
+        });
     }
 
     /**
@@ -27,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categories');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('approved');
+        });
     }
 };
