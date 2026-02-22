@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use App\Models\JenisBarang;
 use Illuminate\Database\Seeder;
 
@@ -17,10 +18,12 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         // Ini user Superadmin yang akan dibuat otomatis
-        User::create([
+        // Buat superadmin hanya jika belum ada (hindari duplicate saat seed ulang)
+        User::firstOrCreate([
             'username' => 'superadmin',
+        ], [
             'email' => 'superadmin@example.com',
-            'password' => bcrypt('12345678'), // Ubah password ini di produksi
+            'password' => Hash::make('12345678'), // hash password here to keep consistent with controllers
             'role' => 'Superadmin',
             'status' => true,
             'approved' => true // Superadmin tidak perlu approval

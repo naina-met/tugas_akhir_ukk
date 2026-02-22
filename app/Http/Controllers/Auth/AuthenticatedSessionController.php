@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
@@ -36,9 +37,10 @@ class AuthenticatedSessionController extends Controller
         }
 
         // 3. CEK APPROVAL STATUS UNTUK ADMIN ROLE (Superadmin tidak perlu approval)
-        if (Auth::user()->role === 'Admin') {
+        $user = Auth::user();
+        if ($user && $user->role === 'Admin') {
             // Admin HARUS disetujui sebelum login
-            if (!Auth::user()->approved) {
+            if (!$user->approved) {
                 Auth::logout();
 
                 throw ValidationException::withMessages([
@@ -47,11 +49,14 @@ class AuthenticatedSessionController extends Controller
             }
 
             // Jika Admin approved, otomatis aktifkan status (bisa login ulang setelah logout)
-            Auth::user()->update(['status' => true]);
+            if ($user instanceof User) {
+                $user->update(['status' => true]);
+            }
         }
 
         // 4. CEK STATUS USER - Harus aktif (status = true)
-        if (!Auth::user()->status) {
+        // Gunakan $user yang sudah diambil sebelumnya untuk konsistensi
+        if (!$user || !$user->status) {
             Auth::logout();
 
             throw ValidationException::withMessages([
@@ -72,8 +77,11 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request)
     {
         // Jika user adalah Admin, set status jadi non-aktif saat logout
-        if (Auth::check() && Auth::user()->role === 'Admin') {
-            Auth::user()->update(['status' => false]);
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user && $user->role === 'Admin' && $user instanceof User) {
+                $user->update(['status' => false]);
+            }
         }
 
         Auth::logout();
