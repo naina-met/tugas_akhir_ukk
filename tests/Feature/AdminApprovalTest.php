@@ -31,6 +31,7 @@ class AdminApprovalTest extends TestCase
 
     public function test_superadmin_can_approve_and_admin_can_login()
     {
+        /** @var \App\Models\User $super */
         $super = User::factory()->create([
             'username' => 'super',
             'email' => 'super@example.test',
@@ -40,6 +41,7 @@ class AdminApprovalTest extends TestCase
             'approved' => true,
         ]);
 
+        /** @var \App\Models\User $admin */
         $admin = User::factory()->create([
             'username' => 'adm',
             'email' => 'adm@example.test',
@@ -68,6 +70,7 @@ class AdminApprovalTest extends TestCase
 
     public function test_admin_logout_sets_status_false_but_superadmin_remains_active()
     {
+        /** @var \App\Models\User $admin */
         $admin = User::factory()->create([
             'username' => 'adm2',
             'email' => 'adm2@example.test',
@@ -82,6 +85,7 @@ class AdminApprovalTest extends TestCase
         $admin->refresh();
         $this->assertFalse((bool) $admin->status);
 
+        /** @var \App\Models\User $super */
         $super = User::factory()->create([
             'username' => 'super2',
             'email' => 'super2@example.test',
