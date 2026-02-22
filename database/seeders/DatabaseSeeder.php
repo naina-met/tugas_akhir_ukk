@@ -18,16 +18,17 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         // Ini user Superadmin yang akan dibuat otomatis
-        // Buat superadmin hanya jika belum ada (hindari duplicate saat seed ulang)
-        User::firstOrCreate([
-            'username' => 'superadmin',
-        ], [
-            'email' => 'superadmin@example.com',
-            'password' => Hash::make('12345678'), // hash password here to keep consistent with controllers
-            'role' => 'Superadmin',
-            'status' => true,
-            'approved' => true // Superadmin tidak perlu approval
-        ]);
+        // Pastikan superadmin selalu memiliki password yang diketahui saat seeding
+        User::updateOrCreate(
+            ['username' => 'superadmin'],
+            [
+                'email' => 'superadmin@example.com',
+                'password' => Hash::make('12345678'), // reset/hardcode password for local dev seeder
+                'role' => 'Superadmin',
+                'status' => true,
+                'approved' => true, // Superadmin tidak perlu approval
+            ]
+        );
 
         // Seed Jenis Barang - 2 pilihan utama
         JenisBarang::create(['name' => 'Modal']);

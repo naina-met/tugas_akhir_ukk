@@ -36,7 +36,7 @@ class ItemController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::orderBy('name')->get()->unique('name')->values();
         return view('items.create', compact('categories'));
     }
 
@@ -97,7 +97,7 @@ class ItemController extends Controller
 
     public function edit(Item $item)
     {
-        $categories = Category::all();
+        $categories = Category::orderBy('name')->get()->unique('name')->values();
         return view('items.edit', compact('item', 'categories'));
     }
 

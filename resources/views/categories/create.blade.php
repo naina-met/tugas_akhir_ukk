@@ -61,7 +61,7 @@
                             name="name"
                             type="text"
                             value="{{ old('name', $category->name ?? '') }}"
-                            placeholder="Contoh: Proyektor, Kertas A4, AC, Pen Merah, dll"
+                            placeholder="Contoh: Elektronik, Alat Kebersihan, Alat Tulis, dll"
                             required
                             class="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"/>
                         @error('name')

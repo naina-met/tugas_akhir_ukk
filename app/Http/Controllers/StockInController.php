@@ -102,6 +102,19 @@ class StockInController extends Controller
         $newItem->stock += $request->quantity;
         $newItem->save();
 
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Edit',
+            'module' => 'Stock In',
+            'item_name' => $newItem->name,
+            'details' => json_encode([
+                'stock_in_id' => $stockIn->id,
+                'item_id' => $request->item_id,
+                'quantity' => $request->quantity,
+            ]),
+        ]);
+
         return redirect()->route('stock-ins.index')
             ->with('success', 'Stock in updated successfully.');
     }

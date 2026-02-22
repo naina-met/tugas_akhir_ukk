@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StockOut;
 use App\Models\Item;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -86,13 +87,27 @@ class StockOutController extends Controller
 
         $item->decrement('stock', $validated['quantity']);
 
-        StockOut::create([
+        $stockOut = StockOut::create([
             'date' => $validated['date'],
             'item_id' => $validated['item_id'],
             'quantity' => $validated['quantity'],
             'outgoing_destination' => $validated['outgoing_destination'],
             'description' => $validated['description'],
             'user_id' => Auth::id(),
+        ]);
+
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Tambah',
+            'module' => 'Stock Out',
+            'item_name' => $item->name,
+            'details' => json_encode([
+                'stock_out_id' => $stockOut->id,
+                'item_id' => $validated['item_id'],
+                'quantity' => $validated['quantity'],
+                'destination' => $validated['outgoing_destination'],
+            ]),
         ]);
 
         return redirect()
@@ -158,6 +173,20 @@ class StockOutController extends Controller
 
         $stockOut->update($validated);
 
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Edit',
+            'module' => 'Stock Out',
+            'item_name' => $newItem->name,
+            'details' => json_encode([
+                'stock_out_id' => $stockOut->id,
+                'item_id' => $validated['item_id'],
+                'quantity' => $validated['quantity'],
+                'destination' => $validated['outgoing_destination'],
+            ]),
+        ]);
+
         return redirect()
             ->route('stock-outs.index')
             ->with('success', 'Data stok keluar berhasil diperbarui.');
@@ -166,7 +195,17 @@ class StockOutController extends Controller
     public function destroy(StockOut $stockOut)
     {
         $item = Item::findOrFail($stockOut->item_id);
+        $itemName = $item->name;
         $item->increment('stock', $stockOut->quantity);
+
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Hapus',
+            'module' => 'Stock Out',
+            'item_name' => $itemName,
+            'details' => json_encode(['stock_out_id' => $stockOut->id]),
+        ]);
 
         $stockOut->delete();
 

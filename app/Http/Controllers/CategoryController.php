@@ -36,7 +36,7 @@ class CategoryController extends Controller
 
     public function create()
     {
-        $jenisBarangs = JenisBarang::all();
+        $jenisBarangs = JenisBarang::orderBy('name')->get()->unique('name')->values();
         return view('categories.create', compact('jenisBarangs'));
     }
 
@@ -72,7 +72,7 @@ class CategoryController extends Controller
 
     public function edit(Category $category)
     {
-        $jenisBarangs = JenisBarang::all();
+        $jenisBarangs = JenisBarang::orderBy('name')->get()->unique('name')->values();
         return view('categories.edit', compact('category', 'jenisBarangs'));
     }
 
