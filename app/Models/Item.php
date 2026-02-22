@@ -19,6 +19,7 @@ class Item extends Model
         'unit',
         'qr_code',
         'user_id',
+        'photo',
     ];
 
     public function category()

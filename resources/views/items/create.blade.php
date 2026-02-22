@@ -28,6 +28,7 @@
                 <form method="POST"
                       action="{{ isset($item) ? route('items.update', $item) : route('items.store') }}"
                       id="itemForm"
+                      enctype="multipart/form-data"
                       class="space-y-6">
                     @csrf
                     @isset($item)
@@ -188,6 +189,27 @@
                         @enderror
                     </div>
 
+                    <!-- Photo Upload (Conditional) -->
+                    <div id="photoContainer" style="display: none;">
+                        <label for="photo" class="block text-sm font-semibold text-slate-700 mb-2.5">
+                            📸 Foto Barang
+                        </label>
+                        <input type="file"
+                               id="photo"
+                               name="photo"
+                               accept="image/*"
+                               class="w-full text-sm text-slate-600
+                                      file:mr-4 file:py-2.5 file:px-4
+                                      file:rounded-lg file:border-0
+                                      file:text-sm file:font-medium
+                                      file:bg-sky-100 file:text-sky-700
+                                      hover:file:bg-sky-200 transition cursor-pointer">
+                        <p class="text-sm text-slate-500 mt-2">(Opsional - Upload foto untuk barang rusak ringan/berat)</p>
+                        @error('photo')
+                            <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Actions -->
                     <div class="flex gap-3 justify-end pt-6">
                         <a href="{{ route('items.index') }}"
@@ -220,6 +242,24 @@
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('itemForm');
             const submitBtn = document.getElementById('submitBtn');
+            const conditionField = document.getElementById('condition');
+            const photoContainer = document.getElementById('photoContainer');
+
+            // Show/hide photo container based on condition
+            const togglePhotoContainer = () => {
+                const condition = conditionField.value;
+                if (condition === 'rusak_ringan' || condition === 'rusak_berat') {
+                    photoContainer.style.display = 'block';
+                } else {
+                    photoContainer.style.display = 'none';
+                }
+            };
+
+            // Initial check
+            togglePhotoContainer();
+
+            // Listen for condition changes
+            conditionField.addEventListener('change', togglePhotoContainer);
 
             form.addEventListener('submit', function () {
                 submitBtn.disabled = true;

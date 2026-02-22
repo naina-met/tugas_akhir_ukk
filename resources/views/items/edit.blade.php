@@ -17,6 +17,7 @@
             <form id="itemForm"
                   method="POST"
                   action="{{ isset($item) ? route('items.update', $item) : route('items.store') }}"
+                  enctype="multipart/form-data"
                   class="bg-white rounded-2xl shadow-xl
                          border border-slate-200
                          p-8 space-y-6">
@@ -157,6 +158,59 @@
                     @enderror
                 </div>
 
+                <!-- Condition -->
+                <div>
+                    <label for="condition" class="block text-sm font-semibold text-slate-700 mb-2.5">
+                        🔍 Kondisi Barang
+                    </label>
+                    <select
+                        id="condition"
+                        name="condition"
+                        class="w-full rounded-lg
+                               border border-slate-300
+                               px-4 py-2.5
+                               text-slate-700
+                               bg-white
+                               focus:ring-2 focus:ring-sky-400
+                               focus:border-sky-400
+                               focus:outline-none transition">
+                        <option value="">-- Pilih Kondisi --</option>
+                        <option value="baik" {{ old('condition', $item->condition ?? '') === 'baik' ? 'selected' : '' }}>Baik</option>
+                        <option value="rusak_ringan" {{ old('condition', $item->condition ?? '') === 'rusak_ringan' ? 'selected' : '' }}>Rusak Ringan</option>
+                        <option value="rusak_berat" {{ old('condition', $item->condition ?? '') === 'rusak_berat' ? 'selected' : '' }}>Rusak Berat</option>
+                    </select>
+                    @error('condition')
+                        <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Photo Upload (Conditional) -->
+                <div id="photoContainer" style="display: none;">
+                    <label for="photo" class="block text-sm font-semibold text-slate-700 mb-2.5">
+                        📸 Foto Barang
+                    </label>
+                    @if(isset($item) && $item->photo)
+                        <div class="mb-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
+                            <p class="text-xs text-slate-600 mb-2">Foto saat ini:</p>
+                            <img src="{{ asset('storage/' . $item->photo) }}" alt="{{ $item->name }}" class="h-24 w-24 rounded-lg object-cover border border-sky-200">
+                        </div>
+                    @endif
+                    <input type="file"
+                           id="photo"
+                           name="photo"
+                           accept="image/*"
+                           class="w-full text-sm text-slate-600
+                                  file:mr-4 file:py-2.5 file:px-4
+                                  file:rounded-lg file:border-0
+                                  file:text-sm file:font-medium
+                                  file:bg-sky-100 file:text-sky-700
+                                  hover:file:bg-sky-200 transition cursor-pointer">
+                    <p class="text-sm text-slate-500 mt-2">(Opsional - Upload foto untuk barang rusak ringan/berat)</p>
+                    @error('photo')
+                        <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Action -->
                 <div class="flex gap-3 justify-end pt-6">
                     <a href="{{ route('items.index') }}"
@@ -184,10 +238,32 @@
 
     <!-- Disable Submit Button Script -->
     <script>
-        document.getElementById('itemForm').addEventListener('submit', function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('itemForm');
             const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerText = '{{ isset($item) ? "Updating..." : "Saving..." }}';
+            const conditionField = document.getElementById('condition');
+            const photoContainer = document.getElementById('photoContainer');
+
+            // Show/hide photo container based on condition
+            const togglePhotoContainer = () => {
+                const condition = conditionField.value;
+                if (condition === 'rusak_ringan' || condition === 'rusak_berat') {
+                    photoContainer.style.display = 'block';
+                } else {
+                    photoContainer.style.display = 'none';
+                }
+            };
+
+            // Initial check
+            togglePhotoContainer();
+
+            // Listen for condition changes
+            conditionField.addEventListener('change', togglePhotoContainer);
+
+            form.addEventListener('submit', function () {
+                submitBtn.disabled = true;
+                submitBtn.innerText = '{{ isset($item) ? "Updating..." : "Saving..." }}';
+            });
         });
     </script>
 </x-app-layout>

@@ -49,6 +49,7 @@ class ItemController extends Controller
             'description' => 'nullable',
             'condition' => 'nullable|in:baik,rusak_ringan,rusak_berat',
             'unit' => 'required|in:pcs,box,kg,liter',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->all();
@@ -56,6 +57,12 @@ class ItemController extends Controller
 
         // 🔥 SIMPAN USER YANG INPUT
         $data['user_id'] = Auth::id();
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('items', 'public');
+            $data['photo'] = $photoPath;
+        }
 
         $item = Item::create($data);
 
@@ -110,10 +117,21 @@ class ItemController extends Controller
             'description' => 'nullable',
             'condition' => 'nullable|in:baik,rusak_ringan,rusak_berat',
             'unit' => 'required|in:pcs,box,kg,liter',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->all();
         unset($data['stock']);
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($item->photo && Storage::disk('public')->exists($item->photo)) {
+                Storage::disk('public')->delete($item->photo);
+            }
+            $photoPath = $request->file('photo')->store('items', 'public');
+            $data['photo'] = $photoPath;
+        }
 
         $item->update($data);
 
@@ -139,6 +157,10 @@ class ItemController extends Controller
     {
         if ($item->qr_code) {
             Storage::disk('public')->delete($item->qr_code);
+        }
+
+        if ($item->photo && Storage::disk('public')->exists($item->photo)) {
+            Storage::disk('public')->delete($item->photo);
         }
 
         $item->delete();
