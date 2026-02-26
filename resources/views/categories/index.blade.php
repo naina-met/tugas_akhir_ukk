@@ -85,49 +85,42 @@
 
                         <!-- TABLE BODY -->
                         <tbody class="text-slate-700">
-                            @forelse ($categories as $category)
-                                <tr class="hover:bg-amber-50 transition-colors border-b border-slate-100">
-                                    <td class="px-6 py-4 text-sm">{{ $categories->firstItem() + $loop->index }}</td>
-                                    <td class="px-6 py-4 text-sm">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                                            {{ $category->jenisBarang->name ?? 'N/A' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 font-medium text-slate-800">{{ $category->name }}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">{{ $category->description }}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-center gap-2">
-                                            <a href="{{ route('categories.edit', $category) }}"
-                                               class="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200
-                                                      border border-blue-200 rounded-lg text-xs font-medium transition">
-                                                ✏️ Ubah
-                                            </a>
-                                            <form action="{{ route('categories.destroy', $category) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="button"
-                                                        onclick="confirmDelete(event, '{{ $category->name }}', 'kategori')"
-                                                        class="px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200
-                                                               border border-rose-200 rounded-lg text-xs font-medium transition">
-                                                    🗑️ Hapus
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center">
-                                        <div class="flex flex-col items-center gap-3">
-                                            <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                            </svg>
-                                            <p class="text-slate-400 font-medium">Tidak ada kategori ditemukan</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+    @forelse ($categories as $category)
+        <tr class="hover:bg-amber-50 transition-colors border-b border-slate-100">
+            <td class="px-6 py-4 text-sm font-medium">
+                {{ ($categories->currentPage() - 1) * $categories->perPage() + $loop->iteration }}
+            </td>
+
+            <td class="px-6 py-4 text-sm">
+                <button type="button" 
+                        onclick="tampilkanSemuaBarangJenis('{{ $category->jenisBarang->name }}')"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm border {{ str_contains(strtolower($category->jenisBarang->name ?? ''), 'modal') ? 'bg-sky-100 text-sky-700 border-sky-200 hover:bg-sky-500 hover:text-white' : 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-500 hover:text-white' }}">
+                    {{ $category->jenisBarang->name ?? 'N/A' }}
+                </button>
+            </td>
+
+            <td class="px-6 py-4 font-medium text-slate-800">{{ $category->name }}</td>
+            
+            <td class="px-6 py-4 text-sm text-slate-600">{{ $category->description }}</td>
+            
+            <td class="px-6 py-4">
+                <div class="flex justify-center gap-2">
+                    <a href="{{ route('categories.edit', $category) }}" class="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 rounded-lg text-xs font-medium transition">
+                        ✏️ Ubah
+                    </a>
+                    <form action="{{ route('categories.destroy', $category) }}" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" onclick="confirmDelete(event, '{{ $category->name }}', 'kategori')" class="px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200 rounded-lg text-xs font-medium transition">
+                            🗑️ Hapus
+                        </button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    @empty
+        @endforelse
+</tbody>
                 </table>
 
                 <!-- Pagination -->
@@ -140,7 +133,12 @@
             </div>
         </div>
     </div>
-
+<style>
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
     <script>
         function toggleSearchCategories() {
             const form = document.getElementById('searchFormCategories');
@@ -197,5 +195,63 @@
                 }
             });
         }
+
     </script>
+<div id="modalGrupBarang" class="fixed inset-0 z-[999] hidden">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeGrupModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate__animated animate__zoomIn animate__faster">
+            <div id="headerColor" class="p-5 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg" id="titleGrup">Daftar Barang</h3>
+                <button onclick="closeGrupModal()" class="hover:scale-110 transition-transform">✕</button>
+            </div>
+            <div class="p-6">
+                <div id="isiListBarang" class="grid gap-2 max-h-[350px] overflow-y-auto pr-2 custom-scroll">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function tampilkanSemuaBarangJenis(jenis) {
+        const modal = document.getElementById('modalGrupBarang');
+        const title = document.getElementById('titleGrup');
+        const list = document.getElementById('isiListBarang');
+        const header = document.getElementById('headerColor');
+
+        // Data dari Controller
+        const dataBarang = @json($itemsByJenis);
+        const listBarang = dataBarang[jenis] || [];
+
+        title.innerText = "Semua Barang " + jenis;
+        list.innerHTML = "";
+
+        // Warna Header dinamis (Modal = Biru, Habis Pakai = Hijau)
+        if(jenis.includes("Modal")) {
+            header.className = "p-5 flex justify-between items-center text-white bg-sky-500";
+        } else {
+            header.className = "p-5 flex justify-between items-center text-white bg-emerald-500";
+        }
+
+        if (listBarang.length > 0) {
+            // Pakai Set supaya kalau ada nama barang yang sama tidak muncul double
+            [...new Set(listBarang)].forEach(nama => {
+                list.innerHTML += `
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center text-sm text-slate-700 font-medium">
+                        <div class="w-2 h-2 rounded-full mr-3 ${jenis.includes('Modal') ? 'bg-sky-500' : 'bg-emerald-500'}"></div>
+                        ${nama}
+                    </div>
+                `;
+            });
+        } else {
+            list.innerHTML = "<p class='text-center text-slate-400 italic py-5'>Kosong.</p>";
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeGrupModal() {
+        document.getElementById('modalGrupBarang').classList.add('hidden');
+    }
+</script>
 </x-app-layout>

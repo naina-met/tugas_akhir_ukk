@@ -34,18 +34,6 @@
                 @csrf
                 @method('PUT')
 
-                <!-- Date -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">
-                        📅 Tanggal
-                    </label>
-                    <input type="date"
-                           name="date"
-                           value="{{ old('date', $stockOut->date->format('Y-m-d')) }}"
-                           required
-                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5">
-                </div>
-
                 <!-- Item -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2.5">

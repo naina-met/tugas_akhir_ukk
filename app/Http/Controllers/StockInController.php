@@ -22,7 +22,14 @@ class StockInController extends Controller
         }
         
         $stockIns = $query->latest()->paginate(10);
-        return view('stock_ins.index', compact('stockIns'));
+        
+        // Fetch activity logs for Stock In module
+        $activityLogs = ActivityLog::where('module', 'Stock In')
+            ->with('user')
+            ->latest()
+            ->get();
+        
+        return view('stock_ins.index', compact('stockIns', 'activityLogs'));
     }
 
     public function create()
@@ -34,7 +41,6 @@ class StockInController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'date' => 'required|date',
             'item_id' => 'required|exists:items,id',
             'quantity' => 'required|integer|min:1',
             'incoming_source' => 'required|string|max:255',
@@ -42,7 +48,7 @@ class StockInController extends Controller
         ]);
 
         $stockIn = StockIn::create([
-            'date' => $request->date,
+            'date' => now(),
             'item_id' => $request->item_id,
             'quantity' => $request->quantity,
             'incoming_source' => $request->incoming_source,
@@ -60,7 +66,15 @@ class StockInController extends Controller
             'action' => 'Tambah',
             'module' => 'Stock In',
             'item_name' => $item->name,
-            'details' => json_encode(['stock_in_id' => $stockIn->id, 'quantity' => $request->quantity]),
+            'details' => json_encode([
+                'stock_in_id' => $stockIn->id,
+                'item_id' => $request->item_id,
+                'item_name' => $item->name,
+                'date' => now()->format('Y-m-d H:i:s'),
+                'quantity' => $request->quantity,
+                'incoming_source' => $request->incoming_source,
+                'description' => $request->description,
+            ]),
         ]);
 
         return redirect()->route('stock-ins.index')
@@ -76,12 +90,14 @@ class StockInController extends Controller
     public function update(Request $request, StockIn $stockIn)
     {
         $request->validate([
-            'date' => 'required|date',
             'item_id' => 'required|exists:items,id',
             'quantity' => 'required|integer|min:1',
             'incoming_source' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
+
+        // Capture original values for comparison
+        $originalData = $stockIn->getOriginal();
 
         // rollback stok lama
         $oldItem = Item::findOrFail($stockIn->item_id);
@@ -90,7 +106,6 @@ class StockInController extends Controller
 
         // update data
         $stockIn->update([
-            'date' => $request->date,
             'item_id' => $request->item_id,
             'quantity' => $request->quantity,
             'incoming_source' => $request->incoming_source,
@@ -102,6 +117,20 @@ class StockInController extends Controller
         $newItem->stock += $request->quantity;
         $newItem->save();
 
+        // Track changes
+        $changes = [];
+        $fieldsToCheck = ['quantity', 'incoming_source', 'description'];
+        foreach ($fieldsToCheck as $field) {
+            $oldValue = $originalData[$field] ?? null;
+            $newValue = $request->input($field);
+            if ($oldValue !== $newValue) {
+                $changes[$field] = [
+                    'from' => $oldValue,
+                    'to' => $newValue
+                ];
+            }
+        }
+
         // Log activity
         ActivityLog::create([
             'user_id' => Auth::id(),
@@ -111,7 +140,7 @@ class StockInController extends Controller
             'details' => json_encode([
                 'stock_in_id' => $stockIn->id,
                 'item_id' => $request->item_id,
-                'quantity' => $request->quantity,
+                'changes' => $changes,
             ]),
         ]);
 
@@ -125,7 +154,27 @@ class StockInController extends Controller
         $item->stock -= $stockIn->quantity;
         $item->save();
         $itemName = $item->name;
-        ActivityLog::create(['user_id' => Auth::id(), 'action' => 'Hapus', 'module' => 'Stock In', 'item_name' => $itemName, 'details' => json_encode(['stock_in_id' => $stockIn->id])]);        $stockIn->delete();
+        
+        // Capture data before deletion
+        $stockInData = [
+            'stock_in_id' => $stockIn->id,
+            'item_name' => $itemName,
+            'date' => $stockIn->date,
+            'quantity' => $stockIn->quantity,
+            'incoming_source' => $stockIn->incoming_source,
+            'description' => $stockIn->description,
+        ];
+        
+        // Log activity before deletion
+        ActivityLog::create([
+            'user_id' => Auth::id(), 
+            'action' => 'Hapus', 
+            'module' => 'Stock In', 
+            'item_name' => $itemName, 
+            'details' => json_encode($stockInData)
+        ]);
+        
+        $stockIn->delete();
 
         return redirect()->route('stock-ins.index')
             ->with('success', 'Stock in deleted successfully.');

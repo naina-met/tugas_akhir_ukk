@@ -10,29 +10,26 @@ use Illuminate\Support\Facades\Auth;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request)
-    {
-        $query = Category::with(['jenisBarang']);
-        
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('jenisBarang', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+   public function index(Request $request)
+{
+    $query = Category::with(['jenisBarang', 'items']);
+    // ... (kode search kamu tetap)
+    $categories = $query->latest()->paginate(10);
+
+    // LOGIKA BARU: Kelompokkan barang berdasarkan Jenis (Modal/Habis Pakai)
+    $itemsByJenis = [];
+    $allData = Category::with(['jenisBarang', 'items'])->get();
+    
+    foreach ($allData as $cat) {
+        $jenisName = $cat->jenisBarang->name ?? 'Lainnya';
+        foreach ($cat->items as $item) {
+            // Kita kumpulin semua barang ke dalam grup "Modal" atau "Habis Pakai"
+            $itemsByJenis[$jenisName][] = $item->name;
         }
-        
-        $categories = $query->latest()->paginate(10);
-        
-        // Load activity logs for history modal
-        $activityLogs = ActivityLog::where('module', 'Categories')
-                                    ->with('user')
-                                    ->latest()
-                                    ->get();
-        
-        return view('categories.index', compact('categories', 'activityLogs'));
     }
+
+    return view('categories.index', compact('categories', 'itemsByJenis'));
+}
 
     public function create()
     {

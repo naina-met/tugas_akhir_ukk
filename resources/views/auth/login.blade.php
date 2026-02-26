@@ -65,6 +65,12 @@
     </style>
 </head>
 <body class="bg-pattern min-h-screen flex items-center justify-center p-4">
+    <a href="/" class="absolute top-6 left-6 flex items-center gap-2 text-slate-500 hover:text-sky-600 transition-colors font-medium text-sm group">
+    <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Kembali ke Beranda
+</a>
 
     <!-- Login Card -->
     <div class="login-card w-full max-w-md rounded-2xl p-8 relative">
@@ -196,9 +202,9 @@
         </form>
 
         <!-- Footer -->
-        <p class="text-center text-slate-400 text-xs mt-8">
+        {{-- <p class="text-center text-slate-400 text-xs mt-8">
             SARPRAS v1.0
-        </p>
+        </p> --}}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

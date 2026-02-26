@@ -21,10 +21,11 @@ class StockOut extends Model
         'description',
         'user_id',
         'returned_at',
+        'borrower_name'
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'datetime',
         'return_date' => 'date',
         'returned_at' => 'datetime',
     ];

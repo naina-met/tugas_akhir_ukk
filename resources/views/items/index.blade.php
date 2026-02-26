@@ -27,7 +27,7 @@
                                 </div>
                             </form>
 
-                            @if(Auth::user()->role === 'superadmin')
+                            @if(strtolower(Auth::user()->role) === 'superadmin')
                                 <button onclick="toggleHistoryModal()" class="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-2.5 rounded-xl border border-indigo-200 hover:bg-indigo-200 transition font-medium shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -36,9 +36,11 @@
                                 </button>
                             @endif
 
+                            @if(strtolower(Auth::user()->role) === 'admin' || strtolower(Auth::user()->role) === 'superadmin')
                             <a href="{{ route('items.create') }}" class="bg-gradient-to-r from-sky-500 to-sky-600 text-white px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium">
                                 + Tambah Barang
                             </a>
+                            @endif
 
                             <a href="{{ route('export.items') }}" class="bg-emerald-100 text-emerald-700 px-6 py-2.5 rounded-xl border border-emerald-200 hover:bg-emerald-200 transition font-medium shadow-sm" onclick="return confirmExport();">
                                 Export
@@ -66,21 +68,24 @@
                 @endif
 
                 <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-gradient-to-r from-sky-50 to-sky-100 border-b border-slate-200">
                             <tr>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">#</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Nama</th>
-                                <th class="px-6 py-4 text-sm font-semibold text-slate-700">Kode</th>
+                                <th class="px-3 py-4 text-sm font-semibold text-slate-700">Kode</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Kategori</th>
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Stok</th>
-                                <th class="px-6 py-4 text-sm font-semibold text-slate-700">Satuan</th>
-                                @if(Auth::user()->role === 'admin')
-                                    <th class="px-6 py-4 text-sm font-semibold text-slate-700">Kondisi</th>
-                                    <th class="px-6 py-4 text-sm font-semibold text-slate-700">Foto</th>
+                                <th class="px-3 py-4 text-sm font-semibold text-slate-700">Satuan</th>
+                                @if(strtolower(Auth::user()->role) === 'admin' || strtolower(Auth::user()->role) === 'superadmin')
+                                    <th class="px-3 py-4 text-sm font-semibold text-slate-700">Kondisi</th>
+                                    <th class="px-3 py-4 text-sm font-semibold text-slate-700">Foto</th>
                                 @endif
                                 <th class="px-6 py-4 text-sm font-semibold text-slate-700">Dibuat Oleh</th>
+                                @if(strtolower(Auth::user()->role) === 'admin')
                                 <th class="px-6 py-4 text-sm font-semibold text-center text-slate-700">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="text-slate-700">
@@ -88,7 +93,7 @@
                                 <tr class="hover:bg-sky-50 transition-colors border-b border-slate-100">
                                     <td class="px-6 py-4 text-sm">{{ $items->firstItem() + $index }}</td>
                                     <td class="px-6 py-4 font-medium text-slate-800">{{ $item->name }}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">{{ $item->code }}</td>
+                                    <td class="px-3 py-4 text-sm text-slate-600">{{ $item->code }}</td>
                                     <td class="px-6 py-4">
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
                                             {{ $item->category->name }}
@@ -102,9 +107,9 @@
                                             {{ $item->stock }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-slate-600">{{ $item->unit }}</td>
-                                    @if(Auth::user()->role === 'admin')
-                                        <td class="px-6 py-4">
+                                    <td class="px-3 py-4 text-sm text-slate-600">{{ $item->unit }}</td>
+                                    @if(strtolower(Auth::user()->role) === 'admin' || strtolower(Auth::user()->role) === 'superadmin')
+                                        <td class="px-3 py-4">
                                             @php
                                                 $conditionMap = [
                                                     'baik' => ['bg-emerald-100', 'text-emerald-700', 'Baik'],
@@ -118,7 +123,7 @@
                                                 {{ $colors[2] }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-3 py-4">
                                             @if($item->photo)
                                                 <a href="{{ asset('storage/' . $item->photo) }}" target="_blank" class="inline-flex items-center justify-center">
                                                     <img src="{{ asset('storage/' . $item->photo) }}" alt="{{ $item->name }}" class="h-12 w-12 rounded-lg object-cover hover:shadow-md transition cursor-pointer border border-slate-200">
@@ -140,6 +145,7 @@
                                             <span class="text-xs text-slate-400">-</span>
                                         @endif
                                     </td>
+                                    @if(strtolower(Auth::user()->role) === 'admin')
                                   <td class="px-6 py-4">
     <div class="flex justify-center gap-2">
         @if(Auth::check())
@@ -161,11 +167,14 @@
         @endif
     </div>
 </td>
+                                    @endif
+    </div>
+</td>
 
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ Auth::user()->role === 'admin' ? '10' : '8' }}" class="px-6 py-12 text-center">
+                                    <td colspan="{{ strtolower(Auth::user()->role) === 'admin' ? '11' : '10' }}" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center gap-3">
                                             <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
@@ -177,6 +186,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
 
                     @if ($items->hasPages())
                         <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-center">
@@ -188,7 +198,7 @@
         </div>
     </div>
 
-    @if(Auth::user()->role === 'superadmin')
+    @if(strtolower(Auth::user()->role) === 'superadmin')
     <div id="historyModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-slate-900/50 backdrop-blur-sm" onclick="toggleHistoryModal()"></div>
@@ -233,7 +243,7 @@
                                     </td>
                                     <td class="px-4 py-3 font-medium text-slate-800">{{ $log->item_name }}</td>
                                     <td class="px-4 py-3">
-                                        <button type="button" onclick='showDetail(@json($log->details))' class="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 rounded-lg text-xs font-medium transition-all">
+                                        <button type="button" onclick='showDetail(@json($log->details), "{{ $log->action }}")' class="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 rounded-lg text-xs font-medium transition-all">
                                             Lihat Detail
                                         </button>
                                     </td>
@@ -263,12 +273,114 @@
             const modal = document.getElementById('historyModal');
             if (modal) modal.classList.toggle('hidden');
         }
-        function showDetail(details) {
+        function showDetail(details, action) {
+            let detailsObj = {};
+            try {
+                detailsObj = typeof details === 'string' ? JSON.parse(details) : details;
+            } catch (e) {
+                detailsObj = details;
+            }
+
+            let html = '<div class="text-left text-sm space-y-2">';
+            let titleIcon = '📋';
+            let titleText = 'Detail';
+
+            // TAMBAH ACTION
+            if (action === 'Tambah') {
+                titleIcon = '➕';
+                titleText = 'Data Barang yang Ditambahkan';
+                
+                const fieldsToShow = ['name', 'code', 'description', 'condition', 'unit'];
+                const fieldNames = {
+                    'name': 'Nama Barang',
+                    'code': 'Kode',
+                    'description': 'Deskripsi',
+                    'condition': 'Kondisi',
+                    'unit': 'Satuan'
+                };
+
+                for (const field of fieldsToShow) {
+                    if (detailsObj[field] !== undefined) {
+                        const value = detailsObj[field] || '-';
+                        html += '<div class="bg-emerald-50 p-3 rounded-lg border-l-4 border-emerald-400">';
+                        html += '<span class="font-semibold text-emerald-700">' + fieldNames[field] + ':</span><br>';
+                        html += '<span class="text-slate-700">' + value + '</span>';
+                        html += '</div>';
+                    }
+                }
+            }
+            // EDIT ACTION
+            else if (action === 'Edit') {
+                titleIcon = '✏️';
+                titleText = 'Perubahan Barang';
+                
+                if (detailsObj.changes && typeof detailsObj.changes === 'object') {
+                    const changes = detailsObj.changes;
+                    const fieldsToShow = ['name', 'description', 'condition', 'unit', 'stock', 'photo'];
+                    
+                    let hasChanges = false;
+                    for (const field of fieldsToShow) {
+                        if (changes[field] !== undefined) {
+                            hasChanges = true;
+                            const displayName = {
+                                'name': 'Nama Barang',
+                                'description': 'Deskripsi',
+                                'condition': 'Kondisi',
+                                'unit': 'Satuan',
+                                'stock': 'Stok',
+                                'photo': 'Foto'
+                            }[field] || field;
+                            
+                            const changeData = changes[field];
+                            const fromVal = (changeData.from || '-') === null ? '-' : changeData.from;
+                            const toVal = (changeData.to || '-') === null ? '-' : changeData.to;
+                            
+                            html += '<div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">';
+                            html += '<span class="font-semibold text-blue-700">' + displayName + '</span><br>';
+                            html += '<span class="text-slate-600 text-xs">Awalnya: <strong>' + fromVal + '</strong></span><br>';
+                            html += '<span class="text-slate-600 text-xs">Jadi: <strong>' + toVal + '</strong></span>';
+                            html += '</div>';
+                        }
+                    }
+                    
+                    if (!hasChanges) {
+                        html += '<div class="text-slate-500 italic text-center py-4">Tidak ada perubahan</div>';
+                    }
+                }
+            }
+            // HAPUS ACTION
+            else if (action === 'Hapus') {
+                titleIcon = '🗑️';
+                titleText = 'Data Barang yang Dihapus';
+                
+                const fieldsToShow = ['name', 'code'];
+                const fieldNames = {
+                    'name': 'Nama Barang',
+                    'code': 'Kode'
+                };
+
+                for (const field of fieldsToShow) {
+                    if (detailsObj[field] !== undefined) {
+                        const value = detailsObj[field] || '-';
+                        html += '<div class="bg-rose-50 p-3 rounded-lg border-l-4 border-rose-400">';
+                        html += '<span class="font-semibold text-rose-700">' + fieldNames[field] + ':</span><br>';
+                        html += '<span class="text-slate-700">' + value + '</span>';
+                        html += '</div>';
+                    }
+                }
+            }
+
+            html += '</div>';
+
             Swal.fire({
-                title: 'Detail Perubahan',
-                html: '<pre class="text-left text-xs bg-slate-50 p-4 rounded-lg overflow-auto max-h-96">' + JSON.stringify(details, null, 2) + '</pre>',
-                width: '600px',
-                customClass: { popup: 'rounded-2xl', title: 'text-lg font-bold text-slate-800' }
+                title: titleIcon + ' ' + titleText,
+                html: html,
+                width: '500px',
+                customClass: { 
+                    popup: 'rounded-2xl', 
+                    title: 'text-lg font-bold text-slate-800',
+                    htmlContainer: 'text-left'
+                }
             });
         }
         document.addEventListener('DOMContentLoaded', function() {

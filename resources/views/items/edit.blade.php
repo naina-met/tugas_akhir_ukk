@@ -187,7 +187,7 @@
                 <!-- Photo Upload (Conditional) -->
                 <div id="photoContainer" style="display: none;">
                     <label for="photo" class="block text-sm font-semibold text-slate-700 mb-2.5">
-                        📸 Foto Barang
+                        📸 Foto Barang <span id="photoRequired" class="text-red-500" style="display: none;">*</span>
                     </label>
                     @if(isset($item) && $item->photo)
                         <div class="mb-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
@@ -205,7 +205,7 @@
                                   file:text-sm file:font-medium
                                   file:bg-sky-100 file:text-sky-700
                                   hover:file:bg-sky-200 transition cursor-pointer">
-                    <p class="text-sm text-slate-500 mt-2">(Opsional - Upload foto untuk barang rusak ringan/berat)</p>
+                    <p id="photoHelperText" class="text-sm text-slate-500 mt-2">(Opsional - Upload foto untuk barang rusak ringan/berat)</p>
                     @error('photo')
                         <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -243,14 +243,25 @@
             const submitBtn = document.getElementById('submitBtn');
             const conditionField = document.getElementById('condition');
             const photoContainer = document.getElementById('photoContainer');
+            const photoInput = document.getElementById('photo');
+            const photoRequired = document.getElementById('photoRequired');
+            const photoHelperText = document.getElementById('photoHelperText');
 
             // Show/hide photo container based on condition
             const togglePhotoContainer = () => {
                 const condition = conditionField.value;
                 if (condition === 'rusak_ringan' || condition === 'rusak_berat') {
                     photoContainer.style.display = 'block';
+                    photoInput.setAttribute('required', 'required');
+                    photoRequired.style.display = 'inline';
+                    photoHelperText.textContent = '⚠️ Wajib upload foto untuk barang rusak';
+                    photoHelperText.className = 'text-sm text-red-600 font-medium mt-2';
                 } else {
                     photoContainer.style.display = 'none';
+                    photoInput.removeAttribute('required');
+                    photoRequired.style.display = 'none';
+                    photoHelperText.textContent = '(Opsional - Upload foto untuk barang rusak ringan/berat)';
+                    photoHelperText.className = 'text-sm text-slate-500 mt-2';
                 }
             };
 
@@ -260,9 +271,17 @@
             // Listen for condition changes
             conditionField.addEventListener('change', togglePhotoContainer);
 
-            form.addEventListener('submit', function () {
+            // Form validation before submit
+            form.addEventListener('submit', function (e) {
+                const condition = conditionField.value;
+                if ((condition === 'rusak_ringan' || condition === 'rusak_berat') && !photoInput.value) {
+                    e.preventDefault();
+                    alert('⚠️ Foto wajib diupload untuk barang dengan kondisi rusak!');
+                    photoInput.focus();
+                    return false;
+                }
                 submitBtn.disabled = true;
-                submitBtn.innerText = '{{ isset($item) ? "Updating..." : "Saving..." }}';
+                submitBtn.innerText = '{{ isset($item) ? "Memperbarui..." : "Menyimpan..." }}';
             });
         });
     </script>

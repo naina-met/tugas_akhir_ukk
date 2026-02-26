@@ -13,7 +13,9 @@ use App\Http\Controllers\{
     ExportController,
     ReportController,
     RekapDashboardController,
-    ActivityLogController
+    ActivityLogController,
+    LoanController
+    
 };
 
 /*
@@ -70,7 +72,6 @@ Route::middleware('auth')->group(function () {
     // ===== STOCK OUT =====
     // View-only routes for superadmin
     Route::get('stock-outs', [StockOutController::class, 'index'])->name('stock-outs.index');
-    Route::get('stock-outs/{stockOut}', [StockOutController::class, 'show'])->name('stock-outs.show');
     
     // Restrict superadmin from managing stock out
     Route::middleware('can:manage-stock-out')->group(function () {
@@ -79,7 +80,11 @@ Route::middleware('auth')->group(function () {
         Route::get('stock-outs/{stockOut}/edit', [StockOutController::class, 'edit'])->name('stock-outs.edit');
         Route::put('stock-outs/{stockOut}', [StockOutController::class, 'update'])->name('stock-outs.update');
         Route::delete('stock-outs/{stockOut}', [StockOutController::class, 'destroy'])->name('stock-outs.destroy');
+        Route::post('stock-outs/{stockOut}/mark-returned', [StockOutController::class, 'markReturned'])->name('stock-outs.mark-returned');
     });
+
+    // Parameterized show route (must come after specific routes)
+    Route::get('stock-outs/{stockOut}', [StockOutController::class, 'show'])->name('stock-outs.show');
 
     Route::get('/export-stock-outs', [ExportController::class, 'exportStockOuts'])
         ->name('export.stockouts');
@@ -117,9 +122,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/export-damage-reports', [ExportController::class, 'exportDamageReports'])
         ->name('export.damagereports');
 
-    // ===== LAPORAN BARANG =====
-    Route::get('/reports', [ReportController::class, 'index'])
-        ->name('reports.index');
+   // ===== LAPORAN BARANG =====
+// Pintu utama halaman laporan (yang bikin error sekarang)
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+// Pintu untuk download Excel (yang tadi kita buat)
+Route::get('/export-reports', [ExportController::class, 'exportReports'])->name('export.reports');
 
     // ===== ACTIVITY LOGS (SUPERADMIN ONLY) =====
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
@@ -168,10 +176,21 @@ Route::get('/argon', function () {
 */
 require __DIR__ . '/auth.php';
 
+// API Routes for AJAX calls
+Route::middleware('auth')->group(function () {
+    Route::get('/api/stock-outs/borrow-count/{itemId}', [StockOutController::class, 'getBorrowCount'])
+        ->name('api.stock-outs.borrow-count');
+});
+
 Route::get('/get-kelompok/{jenis}', function($jenis){
     return \App\Models\KelompokBarang::where('jenis_barang_id',$jenis)->get();
 });
 
 Route::get('/get-category/{kelompok}', function($kelompok){
     return \App\Models\Category::where('kelompok_barang_id',$kelompok)->get();
+});
+
+Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+    Route::get('/dashboard', [LoanController::class, 'index'])->name('dashboard');
+    Route::post('/pinjam', [LoanController::class, 'store'])->name('pinjam.store');
 });

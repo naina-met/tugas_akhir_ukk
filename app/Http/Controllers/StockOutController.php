@@ -30,8 +30,20 @@ class StockOutController extends Controller
         }
 
         $stockOuts = $query->latest()->paginate(10);
+        
+        // Fetch activity logs for Stock Out module
+        $activityLogs = ActivityLog::where('module', 'Stock Out')
+            ->with('user')
+            ->latest()
+            ->get();
 
-        return view('stock_outs.index', compact('stockOuts'));
+        return view('stock_outs.index', compact('stockOuts', 'activityLogs'));
+    }
+
+    public function show(StockOut $stockOut)
+    {
+        // Redirect to edit or index - no dedicated show view
+        return redirect()->route('stock-outs.index');
     }
 
     public function create()
@@ -47,10 +59,11 @@ class StockOutController extends Controller
             'outgoing_destination' => strtolower(trim($request->outgoing_destination)),
         ]);
 
-        $validated = $request->validate([
-            'date' => ['required', 'date'],
+        // Conditional validation for return_date (required if peminjaman)
+        $rules = [
             'item_id' => ['required', 'exists:items,id'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'borrower_name' => ['required_if:outgoing_destination,peminjaman', 'nullable', 'string', 'max:255'],
             'outgoing_destination' => [
                 'required',
                 Rule::in([
@@ -61,18 +74,31 @@ class StockOutController extends Controller
                 ]),
             ],
             'description' => ['nullable', 'string'],
-        ]);
+        ];
 
-        // ❌ LOGIKA TIDAK VALID
-        if (
-            $validated['outgoing_destination'] === 'rusak' &&
-            str_contains(strtolower($validated['description'] ?? ''), 'pinjam')
-        ) {
-            return back()
-                ->withErrors([
-                    'outgoing_destination' => 'Barang rusak tidak bisa dipinjam.'
-                ])
-                ->withInput();
+        // Add return_date validation if destination is peminjaman
+        if ($request->outgoing_destination === 'peminjaman') {
+            $rules['return_date'] = ['required', 'date', 'after_or_equal:today'];
+        } else {
+            $rules['return_date'] = ['nullable'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // Check borrowing limit for peminjaman destination (max 2 unreturned items of same product per day)
+        if ($validated['outgoing_destination'] === 'peminjaman') {
+            $unreturnedBorrows = StockOut::where('item_id', $validated['item_id'])
+                ->where('is_borrowed', true)
+                ->whereNull('returned_at')
+                ->count();
+
+            if ($unreturnedBorrows >= 2) {
+                return back()
+                    ->withErrors([
+                        'item_id' => 'Barang ini sudah dipinjam sebanyak 2 kali dan belum dikembalikan. Maksimal peminjaman adalah 2 barang per hari. Tunggu hingga salah satu barang dikembalikan.'
+                    ])
+                    ->withInput();
+            }
         }
 
         $item = Item::findOrFail($validated['item_id']);
@@ -88,12 +114,15 @@ class StockOutController extends Controller
         $item->decrement('stock', $validated['quantity']);
 
         $stockOut = StockOut::create([
-            'date' => $validated['date'],
+            'date' => now(),
             'item_id' => $validated['item_id'],
             'quantity' => $validated['quantity'],
             'outgoing_destination' => $validated['outgoing_destination'],
+            'borrower_name' => $validated['outgoing_destination'] === 'peminjaman' ? ($request->borrower_name ?? null) : null,
             'description' => $validated['description'],
             'user_id' => Auth::id(),
+            'is_borrowed' => $validated['outgoing_destination'] === 'peminjaman',
+            'return_date' => $validated['outgoing_destination'] === 'peminjaman' ? $validated['return_date'] : null,
         ]);
 
         // Log activity
@@ -104,9 +133,15 @@ class StockOutController extends Controller
             'item_name' => $item->name,
             'details' => json_encode([
                 'stock_out_id' => $stockOut->id,
+                'borrower_name' => $stockOut->borrower_name, // ✨ TAMBAHKAN INI
                 'item_id' => $validated['item_id'],
+                'item_name' => $item->name,
+                'date' => now()->format('Y-m-d H:i:s'),
                 'quantity' => $validated['quantity'],
-                'destination' => $validated['outgoing_destination'],
+                'outgoing_destination' => $validated['outgoing_destination'],
+                'description' => $validated['description'],
+                'is_borrowed' => $validated['outgoing_destination'] === 'peminjaman',
+                'return_date' => $validated['outgoing_destination'] === 'peminjaman' ? $validated['return_date'] : null,
             ]),
         ]);
 
@@ -123,14 +158,24 @@ class StockOutController extends Controller
 
     public function update(Request $request, StockOut $stockOut)
     {
+        // Prevent editing if borrowed item is already returned
+        if ($stockOut->is_borrowed && $stockOut->returned_at) {
+            return back()
+                ->withErrors([
+                    'general' => 'Transaksi peminjaman ini tidak dapat diubah karena barang sudah dikembalikan.'
+                ])
+                ->withInput();
+        }
+
         $request->merge([
             'outgoing_destination' => strtolower(trim($request->outgoing_destination)),
         ]);
 
-        $validated = $request->validate([
-            'date' => ['required', 'date'],
+        // Conditional validation for return_date (required if peminjaman)
+        $rules = [
             'item_id' => ['required', 'exists:items,id'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'borrower_name' => ['required_if:outgoing_destination,peminjaman', 'nullable', 'string', 'max:255'], // ✨ TAMBAHKAN INI
             'outgoing_destination' => [
                 'required',
                 Rule::in([
@@ -141,17 +186,33 @@ class StockOutController extends Controller
                 ]),
             ],
             'description' => ['nullable', 'string'],
-        ]);
+        ];
 
-        if (
-            $validated['outgoing_destination'] === 'rusak' &&
-            str_contains(strtolower($validated['description'] ?? ''), 'pinjam')
-        ) {
-            return back()
-                ->withErrors([
-                    'outgoing_destination' => 'Barang rusak tidak bisa dipinjam.'
-                ])
-                ->withInput();
+        // Add return_date validation if destination is peminjaman
+        if ($request->outgoing_destination === 'peminjaman') {
+            $rules['return_date'] = ['required', 'date', 'after_or_equal:today'];
+        } else {
+            $rules['return_date'] = ['nullable'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // Check borrowing limit for peminjaman destination (max 2 unreturned items of same product per day)
+        // Exclude current record from the count
+        if ($validated['outgoing_destination'] === 'peminjaman') {
+            $unreturnedBorrows = StockOut::where('item_id', $validated['item_id'])
+                ->where('is_borrowed', true)
+                ->whereNull('returned_at')
+                ->where('id', '!=', $stockOut->id)  // Exclude current record
+                ->count();
+
+            if ($unreturnedBorrows >= 2) {
+                return back()
+                    ->withErrors([
+                        'item_id' => 'Barang ini sudah dipinjam sebanyak 2 kali dan belum dikembalikan. Maksimal peminjaman adalah 2 barang per hari. Tunggu hingga salah satu barang dikembalikan.'
+                    ])
+                    ->withInput();
+            }
         }
 
         $oldItem = Item::findOrFail($stockOut->item_id);
@@ -171,7 +232,34 @@ class StockOutController extends Controller
 
         $newItem->decrement('stock', $validated['quantity']);
 
-        $stockOut->update($validated);
+        // Capture original values for comparison
+        $originalData = $stockOut->getOriginal();
+
+        $updateData = [
+            'item_id' => $validated['item_id'],
+            'quantity' => $validated['quantity'],
+            'outgoing_destination' => $validated['outgoing_destination'],
+            'borrower_name' => $validated['outgoing_destination'] === 'peminjaman' ? ($request->borrower_name ?? null) : null, // ✨ TAMBAHKAN INI
+            'description' => $validated['description'],
+            'is_borrowed' => $validated['outgoing_destination'] === 'peminjaman',
+            'return_date' => $validated['outgoing_destination'] === 'peminjaman' ? $validated['return_date'] : null,
+        ];
+
+        $stockOut->update($updateData);
+
+        // Track changes
+        $changes = [];
+    $fieldsToCheck = ['quantity', 'outgoing_destination', 'description', 'is_borrowed', 'return_date', 'borrower_name']; // ✨ TAMBAHKAN 'borrower_name'
+        foreach ($fieldsToCheck as $field) {
+            $oldValue = $originalData[$field] ?? null;
+            $newValue = $updateData[$field] ?? null;
+            if ($oldValue !== $newValue) {
+                $changes[$field] = [
+                    'from' => $oldValue,
+                    'to' => $newValue
+                ];
+            }
+        }
 
         // Log activity
         ActivityLog::create([
@@ -182,8 +270,7 @@ class StockOutController extends Controller
             'details' => json_encode([
                 'stock_out_id' => $stockOut->id,
                 'item_id' => $validated['item_id'],
-                'quantity' => $validated['quantity'],
-                'destination' => $validated['outgoing_destination'],
+                'changes' => $changes,
             ]),
         ]);
 
@@ -194,17 +281,35 @@ class StockOutController extends Controller
 
     public function destroy(StockOut $stockOut)
     {
+        // Prevent deletion if borrowed item is already returned
+        if ($stockOut->is_borrowed && $stockOut->returned_at) {
+            return back()
+                ->withErrors([
+                    'general' => 'Transaksi peminjaman ini tidak dapat dihapus karena barang sudah dikembalikan.'
+                ]);
+        }
+
         $item = Item::findOrFail($stockOut->item_id);
         $itemName = $item->name;
         $item->increment('stock', $stockOut->quantity);
 
-        // Log activity
+        // Capture data before deletion
+        $stockOutData = [
+            'stock_out_id' => $stockOut->id,
+            'item_name' => $itemName,
+            'date' => $stockOut->date,
+            'quantity' => $stockOut->quantity,
+            'outgoing_destination' => $stockOut->outgoing_destination,
+            'description' => $stockOut->description,
+        ];
+
+        // Log activity before deletion
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'Hapus',
             'module' => 'Stock Out',
             'item_name' => $itemName,
-            'details' => json_encode(['stock_out_id' => $stockOut->id]),
+            'details' => json_encode($stockOutData),
         ]);
 
         $stockOut->delete();
@@ -212,5 +317,76 @@ class StockOutController extends Controller
         return redirect()
             ->route('stock-outs.index')
             ->with('success', 'Data stok keluar berhasil dihapus.');
+    }
+
+    /**
+     * Mark a borrowed item as returned
+     */
+    public function markReturned(StockOut $stockOut)
+    {
+        // Check if this is actually a borrowed item
+        if (!$stockOut->is_borrowed || $stockOut->returned_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item ini tidak bisa ditandai sebagai dikembalikan.'
+            ], 400);
+        }
+
+        try {
+            $item = $stockOut->item;
+            
+            // Mark as returned
+            $stockOut->update(['returned_at' => now()]);
+            
+            // Restore stock
+            $item->increment('stock', $stockOut->quantity);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Kembalikan',
+                'module' => 'Stock Out',
+                'item_name' => $item->name,
+                'details' => json_encode([
+                    'stock_out_id' => $stockOut->id,
+                    'item_id' => $stockOut->item_id,
+                    'item_name' => $item->name,
+                    'quantity' => $stockOut->quantity,
+                    'returned_at' => now()->format('Y-m-d H:i:s'),
+                ]),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Barang berhasil ditandai sebagai dikembalikan dan stok dipulihkan.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get current borrow count for an item
+     * API endpoint to check how many of the same item are currently borrowed
+     */
+    public function getBorrowCount($itemId)
+    {
+        $currentCount = StockOut::where('item_id', $itemId)
+            ->where('is_borrowed', true)
+            ->whereNull('returned_at')
+            ->count();
+
+        $canBorrow = $currentCount < 2;
+        $remaining = max(0, 2 - $currentCount);
+
+        return response()->json([
+            'currentCount' => $currentCount,
+            'canBorrow' => $canBorrow,
+            'remaining' => $remaining,
+            'maxBorrow' => 2
+        ]);
     }
 }

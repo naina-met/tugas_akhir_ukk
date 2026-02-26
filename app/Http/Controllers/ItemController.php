@@ -36,12 +36,29 @@ class ItemController extends Controller
 
     public function create()
     {
+        // Only admin and superadmin can create items
+        if (!in_array(strtolower(Auth::user()->role), ['admin', 'superadmin'])) {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'Anda tidak memiliki izin untuk menambahkan barang!');
+        }
+
         $categories = Category::orderBy('name')->get()->unique('name')->values();
         return view('items.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
+        // Only admin and superadmin can store items
+        if (!in_array(strtolower(Auth::user()->role), ['admin', 'superadmin'])) {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'Anda tidak memiliki izin untuk menambahkan barang!');
+        }
+
+        // Foto wajib jika kondisi rusak_ringan atau rusak_berat
+        $photoRequired = in_array($request->condition, ['rusak_ringan', 'rusak_berat']);
+
         $request->validate([
             'name' => 'required',
             'code' => 'required|unique:items',
@@ -49,7 +66,7 @@ class ItemController extends Controller
             'description' => 'nullable',
             'condition' => 'nullable|in:baik,rusak_ringan,rusak_berat',
             'unit' => 'required|in:pcs,box,kg,liter',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => $photoRequired ? 'required|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->all();
@@ -88,7 +105,11 @@ class ItemController extends Controller
             'details' => json_encode([
                 'item_id' => $item->id,
                 'code' => $item->code,
+                'name' => $item->name,
                 'category_id' => $item->category_id,
+                'description' => $item->description,
+                'condition' => $item->condition,
+                'unit' => $item->unit,
             ]),
         ]);
 
@@ -104,12 +125,29 @@ class ItemController extends Controller
 
     public function edit(Item $item)
     {
+        // Only admin can edit items
+        if (strtolower(Auth::user()->role) !== 'admin') {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'Anda tidak memiliki izin untuk mengedit barang!');
+        }
+
         $categories = Category::orderBy('name')->get()->unique('name')->values();
         return view('items.edit', compact('item', 'categories'));
     }
 
     public function update(Request $request, Item $item)
     {
+        // Only admin can update items
+        if (strtolower(Auth::user()->role) !== 'admin') {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'Anda tidak memiliki izin untuk mengedit barang!');
+        }
+
+        // Foto wajib jika kondisi rusak_ringan atau rusak_berat
+        $photoRequired = in_array($request->condition, ['rusak_ringan', 'rusak_berat']);
+
         $request->validate([
             'name' => 'required',
             'code' => 'required|unique:items,code,' . $item->id,
@@ -117,11 +155,14 @@ class ItemController extends Controller
             'description' => 'nullable',
             'condition' => 'nullable|in:baik,rusak_ringan,rusak_berat',
             'unit' => 'required|in:pcs,box,kg,liter',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => $photoRequired ? 'required|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->all();
         unset($data['stock']);
+
+        // Capture original values for comparison
+        $originalData = $item->getOriginal();
 
         // Handle photo upload
         if ($request->hasFile('photo')) {
@@ -136,6 +177,19 @@ class ItemController extends Controller
         $item->update($data);
 
         // Log activity
+        $changes = [];
+        foreach ($data as $key => $newValue) {
+            if ($key !== '_token' && $key !== '_method') {
+                $oldValue = $originalData[$key] ?? null;
+                if ($oldValue !== $newValue) {
+                    $changes[$key] = [
+                        'from' => $oldValue,
+                        'to' => $newValue
+                    ];
+                }
+            }
+        }
+
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'Edit',
@@ -144,7 +198,7 @@ class ItemController extends Controller
             'details' => json_encode([
                 'item_id' => $item->id,
                 'code' => $item->code,
-                'changes' => $data,
+                'changes' => $changes,
             ]),
         ]);
 
@@ -155,6 +209,13 @@ class ItemController extends Controller
 
     public function destroy(Item $item)
     {
+        // Only admin can delete items
+        if (strtolower(Auth::user()->role) !== 'admin') {
+            return redirect()
+                ->route('items.index')
+                ->with('error', 'Anda tidak memiliki izin untuk menghapus barang!');
+        }
+
         if ($item->qr_code) {
             Storage::disk('public')->delete($item->qr_code);
         }
@@ -163,7 +224,24 @@ class ItemController extends Controller
             Storage::disk('public')->delete($item->photo);
         }
 
+        // Capture item data before deletion
+        $itemData = [
+            'item_id' => $item->id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'category_id' => $item->category_id,
+        ];
+
         $item->delete();
+
+        // Log activity
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Hapus',
+            'module' => 'Items',
+            'item_name' => $itemData['name'],
+            'details' => json_encode($itemData),
+        ]);
 
         return redirect()
             ->route('items.index')

@@ -34,23 +34,6 @@
                          p-8 space-y-6">
                 @csrf
 
-                <!-- Date -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">
-                        📅 Tanggal
-                    </label>
-                    <input type="date"
-                           name="date"
-                           value="{{ old('date') }}"
-                           required
-                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5
-                                  text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
-                                  focus:border-rose-400 focus:outline-none transition">
-                    @error('date')
-                        <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
                 <!-- Item -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2.5">
@@ -98,18 +81,58 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-2.5">
                         📍 Tujuan Keluar
                     </label>
-                    <select name="outgoing_destination"
+                    <select id="destinationSelect"
+                            name="outgoing_destination"
                             required
                             class="w-full rounded-lg border border-slate-300 px-4 py-2.5
                                    text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
                                    focus:border-rose-400 focus:outline-none transition">
                         <option value="">-- Pilih Tujuan --</option>
-                        <option value="Penjualan" {{ old('outgoing_destination') == 'Penjualan' ? 'selected' : '' }}>🛍️ Penjualan</option>
-                        <option value="Pemakaian internal" {{ old('outgoing_destination') == 'Pemakaian internal' ? 'selected' : '' }}>🔧 Pemakaian Internal</option>
-                        <option value="Peminjaman" {{ old('outgoing_destination') == 'Peminjaman' ? 'selected' : '' }}>📦 Peminjaman</option>
-                        <option value="Rusak" {{ old('outgoing_destination') == 'Rusak' ? 'selected' : '' }}>💔 Barang Rusak</option>
+                        <option value="penjualan" {{ old('outgoing_destination') == 'penjualan' ? 'selected' : '' }}>🛍️ Penjualan</option>
+                        <option value="pemakaian_internal" {{ old('outgoing_destination') == 'pemakaian_internal' ? 'selected' : '' }}>🔧 Pemakaian Internal</option>
+                        <option value="peminjaman" {{ old('outgoing_destination') == 'peminjaman' ? 'selected' : '' }}>📦 Peminjaman</option>
+                        <option value="rusak" {{ old('outgoing_destination') == 'rusak' ? 'selected' : '' }}>💔 Barang Rusak</option>
                     </select>
                     @error('outgoing_destination')
+                        <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Borrowing Limit Info -->
+                <div id="borrowingInfo" class="hidden p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+                    <p class="text-sm text-blue-700">
+                        <span class="font-semibold">ℹ️ Batas Peminjaman:</span><br>
+                        Maksimal 2 barang yang sama dapat dipinjam per hari. 
+                        <span id="borrowCountInfo" class="font-medium"></span>
+                    </p>
+                </div>
+
+                <!-- Expected Return Date (Show only for Peminjaman) -->
+                <div id="borrowingFields" class="hidden">
+                    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2.5">
+            👤 Nama Peminjam
+        </label>
+        <input type="text"
+               name="borrower_name"
+               id="borrower_name"
+               value="{{ old('borrower_name') }}"
+               placeholder="Masukkan nama peminjam..."
+               class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-700 bg-white focus:ring-2 focus:ring-rose-400 focus:border-rose-400 focus:outline-none transition">
+        @error('borrower_name')
+            <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
+        @enderror
+    </div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2.5">
+                        📅 Tanggal Pengembalian yang Diharapkan
+                    </label>
+                    <input type="date"
+                           name="return_date"
+                           value="{{ old('return_date') }}"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5
+                                  text-slate-700 bg-white focus:ring-2 focus:ring-rose-400
+                                  focus:border-rose-400 focus:outline-none transition">
+                    @error('return_date')
                         <p class="text-rose-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -150,8 +173,61 @@
         </div>
     </div>
 
-    <!-- Disable submit -->
+    <!-- Scripts -->
     <script>
+        // Show/hide borrowing fields based on destination
+        const destinationSelect = document.getElementById('destinationSelect');
+        const itemSelect = document.querySelector('select[name="item_id"]');
+        const borrowingFields = document.getElementById('borrowingFields');
+        const borrowingInfo = document.getElementById('borrowingInfo');
+        const borrowCountInfo = document.getElementById('borrowCountInfo');
+        const returnDateInput = document.querySelector('input[name="return_date"]');
+        const borrowerNameInput = document.getElementById('borrower_name');
+
+        async function checkBorrowCount() {
+            if (destinationSelect.value === 'peminjaman' && itemSelect.value) {
+                try {
+                    const response = await fetch(`/api/stock-outs/borrow-count/${itemSelect.value}`);
+                    const data = await response.json();
+                    
+                    if (data.canBorrow) {
+                        borrowCountInfo.innerHTML = `✅ Saat ini: <strong>${data.currentCount}</strong> barang dipinjam (dapat meminjam ${data.remaining} lagi)`;
+                        borrowingInfo.classList.remove('hidden');
+                    } else {
+                        borrowCountInfo.innerHTML = `❌ Limit tercapai: <strong>${data.currentCount}</strong>/2 barang sudah dipinjam. Tunggu hingga salah satu dikembalikan.`;
+                        borrowingInfo.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error checking borrow count:', error);
+                    borrowingInfo.classList.add('hidden');
+                }
+            } else {
+                borrowingInfo.classList.add('hidden');
+            }
+        }
+
+function toggleBorrowingFields() {
+    if (destinationSelect.value === 'peminjaman') {
+        borrowingFields.classList.remove('hidden');
+        returnDateInput.required = true;
+        borrowerNameInput.required = true; // ✨ TAMBAHAN
+        checkBorrowCount();
+    } else {
+        borrowingFields.classList.add('hidden');
+        borrowingInfo.classList.add('hidden');
+        returnDateInput.required = false;
+        borrowerNameInput.required = false; // ✨ TAMBAHAN
+        returnDateInput.value = '';
+        borrowerNameInput.value = '';       // ✨ TAMBAHAN
+    }
+}
+
+        destinationSelect.addEventListener('change', toggleBorrowingFields);
+        itemSelect.addEventListener('change', checkBorrowCount);
+        
+        // Check on page load
+        toggleBorrowingFields();
+
         document.getElementById('stockOutForm').addEventListener('submit', function () {
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;

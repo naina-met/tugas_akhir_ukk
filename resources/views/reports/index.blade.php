@@ -167,6 +167,13 @@
                                 </svg>
                                 Reset
                             </a>
+                            <a href="{{ route('export.reports', request()->all()) }}" 
+       class="h-10 px-4 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        EXPORT EXCEL
+    </a>
                         </div>
 
                     </div>
@@ -192,6 +199,7 @@
                                 <th class="px-4 py-4 text-left font-semibold w-12">No</th>
                                 <th class="px-4 py-4 text-left font-semibold w-32">Tanggal</th>
                                 <th class="px-4 py-4 text-left font-semibold">Barang</th>
+                                <th class="px-4 py-4 text-left font-semibold w-28">Kondisi</th>
                                 <th class="px-4 py-4 text-center font-semibold w-24">Jenis</th>
                                 <th class="px-4 py-4 text-center font-semibold w-20">Qty</th>
                                 <th class="px-4 py-4 text-left font-semibold w-36">Tujuan</th>
@@ -209,6 +217,11 @@
                                     {{-- <div class="text-xs text-slate-400 mt-0.5">{{ \Carbon\Carbon::parse($r->tanggal)->format('H:i') }}</div> --}}
                                 </td>
                                 <td class="px-4 py-4 font-semibold text-slate-800">{{ $r->barang }}</td>
+                                <td class="px-4 py-4">
+    <div class="text-slate-600 font-medium">
+        {{ $r->kondisi ?? '-' }}
+    </div>
+</td>
                                 <td class="px-4 py-4 text-center">
                                     @if($r->tipe == 'IN')
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-100 rounded-lg uppercase tracking-wide">
@@ -261,7 +274,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-16 text-center">
+                                <td colspan="10" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center gap-4">
                                         <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center">
                                             <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

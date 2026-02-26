@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Sistem Sarpras</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -146,7 +147,12 @@
     </style>
 </head>
 <body class="animated-bg min-h-screen flex items-center justify-center p-4 relative">
-    
+    <a href="/" class="absolute top-6 left-6 flex items-center gap-2 text-white/80 hover:text-white transition-colors font-medium text-sm group z-20">
+    <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    Kembali ke Beranda
+</a>
     <!-- Shapes -->
     <div class="shape"></div>
     <div class="shape"></div>
@@ -315,12 +321,12 @@
             </div>
 
             <!-- Terms -->
-            <div class="flex items-start gap-2 pt-1">
-                <input type="checkbox" id="terms" name="terms" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-sky-primary focus:ring-sky-primary" required>
-                <label for="terms" class="text-sm text-gray-600">
-                    Saya setuju dengan <a href="#" class="link-hover text-sky-primary font-medium">Syarat & Ketentuan</a>
-                </label>
-            </div>
+          <div class="flex items-start gap-2 pt-1">
+    <input type="checkbox" id="terms" name="terms" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-sky-primary focus:ring-sky-primary" required>
+    <label for="terms" class="text-sm text-gray-600">
+        Saya setuju dengan <a href="javascript:void(0)" onclick="showTerms()" class="link-hover text-sky-primary font-medium">Syarat & Ketentuan</a>
+    </label>
+</div>
 
             <!-- Submit Button -->
             <button 
@@ -387,6 +393,31 @@
                 text.className = 'text-xs mt-1 text-green-500';
             }
         }
+        function showTerms() {
+    Swal.fire({
+        title: '<span class="text-2xl font-bold text-gray-800">Syarat & Ketentuan Admin</span>',
+        html: `
+            <div class="text-left text-sm text-gray-600 space-y-4 max-h-96 overflow-y-auto pr-2 custom-scroll">
+                <p>Dengan mendaftar sebagai Admin, Anda menyetujui aturan berikut:</p>
+                <ul class="list-disc ml-5 space-y-2">
+                    <li><b>Tanggung Jawab Data:</b> Anda bertanggung jawab penuh atas setiap input barang masuk, keluar, dan laporan kerusakan.</li>
+                    <li><b>Akurasi Identitas:</b> Wajib mengisi <b>Nama Peminjam</b> dengan valid pada setiap transaksi barang keluar.</li>
+                    <li><b>Keamanan Akun:</b> Dilarang memberikan akses login (password) kepada pihak lain. Segala aktivitas akun adalah tanggung jawab Anda.</li>
+                    <li><b>Integritas:</b> Dilarang memanipulasi data stok untuk menyembunyikan selisih atau kehilangan barang.</li>
+                    <li><b>Kerahasiaan:</b> Data inventaris yang diunduh (Excel) hanya untuk kepentingan internal dan dilarang disebarluaskan.</li>
+                </ul>
+                <p class="pt-2 text-xs text-gray-400 italic font-medium">Sistem mencatat setiap aktivitas Anda untuk keperluan audit.</p>
+            </div>
+        `,
+        confirmButtonText: 'Saya Mengerti',
+        confirmButtonColor: '#0EA5E9',
+        padding: '2rem',
+        borderRadius: '1rem',
+        showClass: {
+            popup: 'animate__animated animate__fadeInUp animate__faster'
+        }
+    });
+}
     </script>
 </body>
 </html>
