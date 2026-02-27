@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Peminjaman;
 use App\Http\Controllers\{
     ProfileController,
     CategoryController,
@@ -14,7 +15,9 @@ use App\Http\Controllers\{
     ReportController,
     RekapDashboardController,
     ActivityLogController,
-    LoanController
+    LoanController,
+    UserAuthController,
+    UserDashboardController
     
 };
 
@@ -33,21 +36,32 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
+    
+    // Rute untuk mengalihkan User berdasarkan Role
+Route::get('/dashboard', function () {
+    $user = \Illuminate\Support\Facades\Auth::user(); // Gunakan Class Auth lengkap
+    
+    if ($user && strtolower($user->role) === 'user') {
+        return redirect()->route('user.dashboard');
+    }
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    return redirect()->route('admin.dashboard');
+})->name('dashboard');
 
-    // ===== DASHBOARD REKAP =====
-    Route::get('/dashboard-rekap', [RekapDashboardController::class, 'index'])
-        ->name('dashboard.rekap');
-});
+// Rute Dashboard masing-masing
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+Route::get('/user/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+// Aksi untuk Admin mengelola pinjaman
+Route::post('/admin/approve/{id}', [DashboardController::class, 'approve'])->name('admin.pinjam.approve');
+Route::post('/admin/reject/{id}', [DashboardController::class, 'reject'])->name('admin.pinjam.reject');
+Route::post('/admin/acc-kembali/{id}', [DashboardController::class, 'accKembali'])->name('admin.pinjam.acc_kembali');
 
-/*
-|--------------------------------------------------------------------------
-| AUTH AREA
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->group(function () {
+    // Aksi untuk User
+Route::post('/user/pinjam', [UserDashboardController::class, 'store'])->name('user.pinjam.store');
+Route::post('/user/kembalikan/{id}', [UserDashboardController::class, 'kembalikan'])->name('user.pinjam.kembalikan');
+        // Fallback jika ada role lain, arahkan ke halaman utama
+        return redirect('/');
+    })->name('dashboard');
 
     // ===== PROFILE =====
     Route::get('/profile', [ProfileController::class, 'edit'])
@@ -133,7 +147,14 @@ Route::get('/export-reports', [ExportController::class, 'exportReports'])->name(
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->name('activity-logs.index')
         ->middleware('role:superadmin');
-});
+
+    // ===== JALUR KHUSUS USER (DIPINDAHKAN KE SINI) =====
+    Route::get('/user/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+    Route::post('/user/pinjam', [UserDashboardController::class, 'store'])->name('user.pinjam.store');
+    Route::post('/user/kembalikan/{id}', [UserDashboardController::class, 'kembalikan'])->name('user.pinjam.kembalikan');
+
+    Route::get('/dashboard-rekap', [RekapDashboardController::class, 'index'])->name('dashboard.rekap');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -158,6 +179,19 @@ Route::middleware(['auth', 'can:manage-users'])->group(function () {
         ->name('users.approve');
     Route::post('/users/{user}/reject', [UserController::class, 'reject'])
         ->name('users.reject');
+});
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN LOAN MANAGEMENT
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin,superadmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/pinjam/{id}/approve', [DashboardController::class, 'approve'])->name('pinjam.approve');
+    Route::post('/pinjam/{id}/reject', [DashboardController::class, 'reject'])->name('pinjam.reject');
+    
+    // Pastikan NAMA ROUTE ini adalah pinjam.accKembali (pakai CamelCase agar sesuai standar)
+    Route::post('/pinjam/{id}/acc-kembali', [DashboardController::class, 'accKembali'])->name('pinjam.accKembali');
 });
 
 /*
@@ -190,7 +224,17 @@ Route::get('/get-category/{kelompok}', function($kelompok){
     return \App\Models\Category::where('kelompok_barang_id',$kelompok)->get();
 });
 
-Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
-    Route::get('/dashboard', [LoanController::class, 'index'])->name('dashboard');
-    Route::post('/pinjam', [LoanController::class, 'store'])->name('pinjam.store');
+// ===== JALUR KHUSUS USER (GURU/SISWA) =====
+// Halaman Welcome User
+Route::get('/portal', [UserAuthController::class, 'showWelcome'])->name('user.welcome');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/portal/login', [UserAuthController::class, 'showLoginForm'])->name('user.login');
+    Route::post('/portal/login', [UserAuthController::class, 'login'])->name('user.login.submit');
+    
+    Route::get('/portal/register', [UserAuthController::class, 'showRegisterForm'])->name('user.register');
+    Route::post('/portal/register', [UserAuthController::class, 'register'])->name('user.register.submit');
 });
+
+// Logout khusus user
+Route::post('/portal/logout', [UserAuthController::class, 'logout'])->name('user.logout');

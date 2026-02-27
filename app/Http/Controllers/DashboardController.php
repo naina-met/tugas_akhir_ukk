@@ -6,23 +6,64 @@ use App\Models\Item;
 use App\Models\Category;
 use App\Models\StockIn;
 use App\Models\StockOut;
+use App\Models\Peminjaman;
+use App\Models\Loan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
-    {
-        $data = $this->getDashboardData();
+public function index()
+{
+    $user = auth()->user();
+    $items = \App\Models\Item::all();
 
-        // Jika request AJAX, return JSON
-        if ($request->ajax()) {
-            return response()->json($data);
-        }
+    if (strtolower($user->role) === 'user') {
+        $myLoans = Peminjaman::where('user_id', $user->id)->latest()->get();
+        // User tidak butuh $pendingLoans
+        return view('user.dashboard', compact('myLoans', 'items'));
+    } else {
+       // PERBAIKAN DI SINI: Tambahkan 'menunggu_kembali' agar terbaca oleh notifikasi
+        $pendingLoans = Peminjaman::whereIn('status', ['pending', 'menunggu_kembali'])
+                            ->with(['user', 'item'])
+                            ->latest()
+                            ->get();
 
-        // Jika request biasa, return view
-        return view('dashboard', $data);
+        return view('dashboard', compact('pendingLoans', 'items'));
     }
+}
+
+    public function approve($id)
+{
+    DB::transaction(function () use ($id) {
+        $loan = Peminjaman::findOrFail($id);
+        if ($loan->status == 'pending') {
+            $loan->update(['status' => 'disetujui']);
+            
+            // SINKRONISASI: Mengurangi stok item
+            $loan->item->decrement('stock', $loan->jumlah);
+        }
+    });
+    return back()->with('success', 'Disetujui, stok barang otomatis berkurang!');
+}
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'alasan_penolakan' => 'required|string|max:255',
+        ]);
+
+        $loan = Peminjaman::where('id', $id)->where('status', 'pending')->firstOrFail();
+
+        $loan->update([
+            'status' => 'ditolak',
+            'alasan_penolakan' => $request->alasan_penolakan,
+        ]);
+
+        return back()->with('success', 'Peminjaman telah ditolak.');
+    }
+
+
 
     private function getDashboardData()
     {
@@ -150,4 +191,17 @@ class DashboardController extends Controller
             'recentStockOut'  => $recentStockOut,
         ];
     }
+
+ 
+public function accKembali($id) // Pastikan namanya persis accKembali
+{
+    DB::transaction(function () use ($id) {
+        $loan = Peminjaman::findOrFail($id);
+        if ($loan->status == 'menunggu_kembali') {
+            $loan->update(['status' => 'selesai']);
+            $loan->item->increment('stock', $loan->jumlah);
+        }
+    });
+    return back()->with('success', 'Barang diterima, stok kembali bertambah!');
+}
 }

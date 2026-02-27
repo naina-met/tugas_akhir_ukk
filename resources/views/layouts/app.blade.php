@@ -34,7 +34,7 @@
     @include('layouts.navigation')
 
     <!-- Main Content Wrapper -->
-    <div class="lg:ml-64 pt-16">
+   <div class="{{ Auth::user()->role === 'user' ? 'ml-0' : 'lg:ml-64' }} pt-16">
 
         <!-- Page Heading -->
         @hasSection('header')

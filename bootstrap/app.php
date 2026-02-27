@@ -11,9 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Add admin approval check to auth group
-        $middleware->appendToGroup('auth', \App\Http\Middleware\CheckAdminApproval::class);
-    })
+    $middleware->alias([
+        // Daftarkan 'role' di sini agar bisa dipakai di routes
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
+    ]);
+})
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

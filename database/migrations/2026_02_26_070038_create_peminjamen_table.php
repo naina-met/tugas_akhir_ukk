@@ -9,12 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
- public function up()
+ public function up(): void
 {
     Schema::create('peminjamans', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Siapa yang pinjam
-        $table->foreignId('item_id')->constrained()->onDelete('cascade'); // Barang apa
+        // Relasi ke user dan item
+        $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+        $table->foreignId('item_id')->constrained('items')->onDelete('cascade');
+
         $table->integer('jumlah');
         $table->date('tgl_pinjam');
         $table->date('tgl_kembali_max');

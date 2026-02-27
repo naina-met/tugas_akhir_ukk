@@ -1,4 +1,5 @@
 <!-- Sidebar -->
+@if(Auth::user()->role !== 'user')
 <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-sm"
        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
     
@@ -149,6 +150,7 @@
 
     </div>
 </aside>
+@endif
 
 <!-- Top Navbar -->
 <nav class="fixed top-0 right-0 left-0 lg:left-64 z-40 h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -236,7 +238,84 @@
                 </form>
             </div>
         </div>
+
+        {{-- Notifikasi hanya akan muncul untuk admin dan superadmin --}}
+      @if(auth()->check() && auth()->user()->role !== 'user')
+    
+    @php
+        $pendingLoans = $pendingLoans ?? collect();
+    @endphp
+
+    <div class="relative inline-block text-left mr-4">
+        <button id="notifButton" class="relative p-2 text-gray-400 hover:text-gray-600 focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            
+            @if($pendingLoans->count() > 0)
+                <span class="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-600 ring-2 ring-white"></span>
+            @endif
+        </button>
+
+        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-lg shadow-xl z-50">
+            <div class="p-3 border-b font-bold text-gray-700">Permintaan Peminjaman</div>
+            <div class="max-h-64 overflow-y-auto">
+          @forelse($pendingLoans as $loan)
+    <div class="p-3 border-b hover:bg-gray-50">
+        <p class="text-sm text-slate-700">
+            <span class="font-bold text-sky-600">{{ $loan->user->username }}</span> 
+            @if($loan->status == 'pending')
+                ingin meminjam <span class="font-bold">{{ $loan->item->name }}</span>
+            @else
+                ingin mengembalikan <span class="font-bold">{{ $loan->item->name }}</span>
+            @endif
+        </p>
         
+        <div class="mt-2 flex gap-2">
+            {{-- Tombol untuk PINJAM --}}
+            @if($loan->status == 'pending')
+                <form action="{{ route('admin.pinjam.approve', $loan->id) }}" method="POST">
+                    @csrf
+                    <button class="bg-emerald-500 text-white px-3 py-1 text-[10px] font-bold rounded-md">SETUJUI PINJAM</button>
+                </form>
+                <form action="{{ route('admin.pinjam.reject', $loan->id) }}" method="POST">
+                    @csrf
+                    <button class="bg-rose-500 text-white px-3 py-1 text-[10px] font-bold rounded-md">TOLAK</button>
+                </form>
+
+            {{-- Tombol untuk KEMBALI (Ini yang kamu cari) --}}
+            @elseif($loan->status == 'menunggu_kembali' || $loan->status == 'proses_kembali')
+                <form action="{{ route('admin.pinjam.accKembali', $loan->id) }}" method="POST">
+                    @csrf
+                    <button class="bg-blue-500 text-white px-3 py-1 text-[10px] font-bold rounded-md">SETUJUI KEMBALI</button>
+                </form>
+            @endif
+        </div>
+    </div>
+@empty
+    <div class="p-4 text-center text-sm text-gray-500">Tidak ada permintaan baru</div>
+@endforelse
+            </div>
+        </div>
+    </div>
+@endif
+
+<script>
+    // Script simpel untuk buka tutup dropdown
+    document.getElementById('notifButton').onclick = function() {
+        document.getElementById('notifDropdown').classList.toggle('hidden');
+    }
+
+    function konfirmasiTolak(form) {
+    let alasan = prompt("Alasan menolak peminjaman:");
+    if (alasan != null && alasan.trim() !== "") {
+        form.querySelector('.input-alasan').value = alasan;
+        return true; 
+    }
+    alert("Alasan harus diisi untuk menolak!");
+    return false;
+}
+</script>
     </div>
 </nav>
 
